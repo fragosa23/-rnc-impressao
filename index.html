@@ -9,64 +9,41 @@
 <body>
   <main class="wrap">
     <section id="home" class="screen active">
-      <div class="hero">
-        <h1>RNC Impressão</h1>
-        <p>Painel mensal, acumulado anual e comparação entre Flexografia e Rotogravura.</p>
-      </div>
+      <div class="hero"><h1>RNC Impressão</h1><p>Painel mensal, equipas, acumulados e comparação entre Flexografia e Rotogravura.</p></div>
       <div class="menu-grid">
-        <button class="menu-btn" data-go="input"><b>1. Introduzir e armazenar dados</b><span>Preencher OF/trabalhos e RNC por máquina. Guardar mês no browser.</span></button>
-        <button class="menu-btn" data-go="monthly"><b>2. Relatório mensal</b><span>Ver mês a mês. Usa as setas ou swipe lateral para alternar meses.</span></button>
-        <button class="menu-btn" data-go="annual"><b>3. Acumulados do ano</b><span>Ver totais anuais. Usa as setas ou swipe lateral para alternar anos.</span></button>
-        <button class="menu-btn" data-go="comparison"><b>4. Comparação entre secções</b><span>Comparar OF, RNC, percentagens, taxa e indicadores de desempenho relativo.</span></button>
+        <button class="menu-btn" data-go="input"><b>1. Introduzir e armazenar dados</b><span>OF/RNC por máquina e equipa.</span></button>
+        <button class="menu-btn" data-go="monthly"><b>2. Relatório mensal</b><span>Ver mês a mês. Usa setas ou swipe.</span></button>
+        <button class="menu-btn" data-go="annual"><b>3. Acumulados do ano</b><span>Totais anuais por ano.</span></button>
+        <button class="menu-btn" data-go="comparison"><b>4. Comparação entre secções</b><span>OF, RNC, taxas e indicadores relativos.</span></button>
+        <button class="menu-btn" data-go="teams"><b>5. Gestão de equipas</b><span>Secção → máquina → equipa → trabalhador, com fichas e desempenho.</span></button>
       </div>
     </section>
 
     <section id="input" class="screen">
-      <div class="hero topbar"><div><h1>Introduzir dados</h1><p>Preenche as caixas e guarda o mês.</p></div><button class="secondary no-print" data-go="home">Menu inicial</button></div>
+      <div class="hero topbar"><div><h1>Introduzir dados</h1><p>Escolhe a equipa associada a cada máquina.</p></div><button class="secondary no-print" data-go="home">Menu inicial</button></div>
       <div class="card">
         <h2>Dados do mês</h2>
-        <div class="grid">
-          <div><label>Mês</label><select id="inMes"></select></div>
-          <div><label>Ano</label><input id="inAno" value="2026" type="number"></div>
-          <div><label>&nbsp;</label><button id="saveMonth">Guardar mês</button></div>
-          <div><label>&nbsp;</label><button class="secondary" id="loadMonth">Carregar mês</button></div>
-        </div>
+        <div class="grid"><div><label>Mês</label><select id="inMes"></select></div><div><label>Ano</label><input id="inAno" value="2026" type="number"></div><div><label>&nbsp;</label><button id="saveMonth">Guardar mês</button></div><div><label>&nbsp;</label><button class="secondary" id="loadMonth">Carregar mês</button></div></div>
         <p><button class="secondary" id="loadExample">Carregar exemplo maio</button><button class="secondary" id="clearInputs">Limpar valores do ecrã</button><button class="danger" id="deleteMonth">Apagar mês guardado</button></p>
-        <div class="card backup-card no-print">
-          <h2>Cópia de segurança</h2>
-          <p class="small">Exporta um ficheiro JSON para o telemóvel. Quando voltares a abrir a app noutro browser ou dispositivo, importa esse ficheiro para recuperar os dados.</p>
-          <button id="exportBackup">Guardar ficheiro de dados</button>
-          <label class="import-label" for="importBackup">Importar ficheiro de dados</label>
-          <input id="importBackup" type="file" accept="application/json,.json">
-        </div>
+        <div class="card backup-card no-print"><h2>Cópia de segurança</h2><p class="small">Exporta/importa um ficheiro JSON com meses, equipas e trabalhadores.</p><button id="exportBackup">Guardar ficheiro de dados</button><label class="import-label" for="importBackup">Importar ficheiro de dados</label><input id="importBackup" type="file" accept="application/json,.json"></div>
         <div id="saveStatus" class="saved small">Os dados ficam guardados neste browser. Usa a cópia de segurança para guardar também num ficheiro.</div>
-        <table><thead><tr><th>Secção</th><th>Máquina</th><th>Trabalhos / OF</th><th>Não conformidades / RNC</th></tr></thead><tbody id="inputRows"></tbody></table>
+        <table><thead><tr><th>Secção</th><th>Máquina</th><th>Equipa</th><th>Trabalhos / OF</th><th>RNC</th></tr></thead><tbody id="inputRows"></tbody></table>
       </div>
     </section>
 
-    <section id="monthly" class="screen swipe-box">
-      <div class="hero topbar"><div><h1>Relatório mensal</h1><p>Swipe para os lados ou usa as setas.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div>
-      <div class="card month-year-nav no-print"><button id="prevMonth">‹</button><div class="big-title" id="monthlyTitle">—</div><button id="nextMonth">›</button></div>
-      <div id="monthlyReport"></div>
-    </section>
+    <section id="monthly" class="screen swipe-box"><div class="hero topbar"><div><h1>Relatório mensal</h1><p>Swipe para os lados ou usa as setas.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div><div class="card month-year-nav no-print"><button id="prevMonth">‹</button><div class="big-title" id="monthlyTitle">—</div><button id="nextMonth">›</button></div><div id="monthlyReport"></div></section>
+    <section id="annual" class="screen swipe-box"><div class="hero topbar"><div><h1>Acumulados do ano</h1><p>Swipe para os lados ou usa as setas.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div><div class="card month-year-nav no-print"><button id="prevYear">‹</button><div class="big-title" id="annualTitle">—</div><button id="nextYear">›</button></div><div id="annualReport"></div></section>
+    <section id="comparison" class="screen swipe-box"><div class="hero topbar"><div><h1>Comparação entre secções</h1><p>OF, RNC, percentagens e indicadores relativos.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div><div class="card month-year-nav no-print"><button id="prevCompMonth">‹</button><div class="big-title" id="comparisonTitle">—</div><button id="nextCompMonth">›</button></div><div id="comparisonReport"></div></section>
 
-    <section id="annual" class="screen swipe-box">
-      <div class="hero topbar"><div><h1>Acumulados do ano</h1><p>Swipe para os lados ou usa as setas.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div>
-      <div class="card month-year-nav no-print"><button id="prevYear">‹</button><div class="big-title" id="annualTitle">—</div><button id="nextYear">›</button></div>
-      <div id="annualReport"></div>
-    </section>
-
-    <section id="comparison" class="screen swipe-box">
-      <div class="hero topbar"><div><h1>Comparação entre secções</h1><p>OF, RNC, percentagens e indicadores relativos para comparar Flexografia e Rotogravura.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div>
-      <div class="card month-year-nav no-print"><button id="prevCompMonth">‹</button><div class="big-title" id="comparisonTitle">—</div><button id="nextCompMonth">›</button></div>
-      <div id="comparisonReport"></div>
+    <section id="teams" class="screen">
+      <div class="hero topbar"><div><h1>Gestão de equipas</h1><p>Cria equipas/trabalhadores e pesquisa por secção, máquina, equipa ou membro.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div>
+      <div class="row">
+        <div class="card"><h2>Criar equipa</h2><label>Nome da equipa</label><input id="teamName" placeholder="Ex: Equipa A"><label>Secção</label><select id="teamSection"></select><label>Máquina habitual</label><select id="teamMachine"></select><button id="addTeam">Adicionar equipa</button></div>
+        <div class="card"><h2>Adicionar trabalhador</h2><label>Nome</label><input id="workerName" placeholder="Nome do trabalhador"><label>Função</label><input id="workerRole" placeholder="Ex: Impressor"><label>Equipa</label><select id="workerTeam"></select><button id="addWorker">Adicionar trabalhador</button></div>
+      </div>
+      <div class="card"><h2>Explorador operacional</h2><div class="grid"><div><label>Secção</label><select id="filterSection"></select></div><div><label>Máquina</label><select id="filterMachine"></select></div><div><label>Equipa</label><select id="filterTeam"></select></div><div><label>Pesquisar trabalhador</label><input id="workerSearch" placeholder="Nome"></div></div><div id="teamExplorer"></div></div>
     </section>
   </main>
-
-  <script src="js/storage.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/reports.js"></script>
-  <script src="js/ai-import.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/storage.js"></script><script src="js/charts.js"></script><script src="js/reports.js"></script><script src="js/ai-import.js"></script><script src="js/app.js"></script>
 </body>
 </html>
