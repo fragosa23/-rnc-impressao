@@ -26,3 +26,24 @@ function yearRows(year){
   }
   return acc;
 }
+
+function exportAllData(){
+  const payload={
+    app:"RNC Impressao",
+    version:1,
+    exportedAt:new Date().toISOString(),
+    data:{}
+  };
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k && k.startsWith("rnc_")) payload.data[k]=JSON.parse(localStorage.getItem(k));
+  }
+  return payload;
+}
+
+function importAllData(payload){
+  if(!payload || !payload.data || typeof payload.data!=="object") throw new Error("Ficheiro inválido.");
+  Object.keys(payload.data).forEach(k=>{
+    if(k.startsWith("rnc_")) localStorage.setItem(k,JSON.stringify(payload.data[k]));
+  });
+}
