@@ -21,7 +21,7 @@ Cada **trabalhador** é identificado em toda a app no formato `número mecanogr�
 Um registo de produção liga tudo:
 
 ```text
-Mês/Ano → Secção → Máquina → Equipa → Turno → Trabalhadores presentes → OF → RNC → Causa → Observações
+Mês/Ano → Secção → Máquina → OF → RNC → Causa → Observações
 ```
 
 ## Interface
@@ -39,7 +39,6 @@ Ecrã inicial ao abrir a app. Visão rápida do ano atual e acumulado geral:
 - total de OF/trabalhos;
 - total de RNC;
 - taxa RNC por 100 OF;
-- OF por RNC;
 - índice de saúde da produção (0 a 100);
 - RNC e OF por secção (gráfico circular);
 - ranking de máquinas com mais trabalho e com mais RNC;
@@ -88,7 +87,6 @@ Cada entidade deve ter uma ficha própria.
 - OF;
 - RNC;
 - taxa RNC/100 OF;
-- OF por RNC;
 - máquinas associadas;
 - equipas associadas.
 
@@ -130,11 +128,11 @@ Campos previstos:
 - turno habitual: manhã, tarde ou noite;
 - anos na empresa;
 - anos na impressão;
-- escolaridade futura;
-- idiomas futuros;
-- máquinas autorizadas futuras;
-- formações futuras;
-- competências futuras;
+- escolaridade ;
+- idiomas ;
+- máquinas autorizadas ;
+- formações ;
+- competências ;
 - observações.
 
 Os dados de desempenho do trabalhador são calculados a partir dos registos em que ele esteve presente. A aplicação deve deixar claro que isto não prova responsabilidade individual por uma RNC.
@@ -230,7 +228,7 @@ Exemplo de equipa (associada a uma máquina; secção implícita pela máquina):
 
 ```json
 {
-  "id": "equipa-a",
+  "id": "E1 - IF4",
   "name": "E1 · IF4",
   "sectionId": "flexo",
   "machineId": "IF4",
@@ -245,7 +243,7 @@ Exemplo de trabalhador (mostrado em toda a app como "2558 - João Silva"):
   "id": "trab-001",
   "number": "2558",
   "name": "João Silva",
-  "teamId": "equipa-a",
+  "teamId": "E1 - IF4",
   "shift": "Manhã",
   "nationality": "Portuguesa",
   "yearsPrinting": 12
@@ -260,9 +258,9 @@ Exemplo de registo de produção:
   "month": 5,
   "sectionId": "flexo",
   "machineId": "IF4",
-  "teamId": "equipa-a",
+  "teamId": "E1 - IF4",
   "shift": "Manhã",
-  "workerIds": ["trab-001", "trab-002"],
+  "workerIds": ["OF-001", "OF-002"],
   "jobs": 165,
   "rnc": 9,
   "cause": "Limpeza",
