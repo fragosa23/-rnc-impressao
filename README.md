@@ -9,7 +9,7 @@ A ideia deixou de ser apenas contar RNC. A aplicação passa a ser centrada na *
 Separar claramente as entidades:
 
 ```text
-Secção ≠ Máquina ≠ Equipa ≠ Trabalhador ≠ Registo de produção
+Secção ≠ Máquina ≠ Equipa ≠ Trabalhador ≠ Turno ≠ Registo de produção
 ```
 
 Isto evita misturar responsabilidades e permite análises mais justas.
@@ -17,7 +17,7 @@ Isto evita misturar responsabilidades e permite análises mais justas.
 Um registo de produção liga tudo:
 
 ```text
-Mês/Ano → Secção → Máquina → Equipa → Trabalhadores presentes → OF → RNC → Causa → Observações
+Mês/Ano → Secção → Máquina → Equipa → Turno → Trabalhadores presentes → OF → RNC → Causa → Observações
 ```
 
 ## Módulos da aplicação
@@ -41,6 +41,7 @@ Registo mensal de produção:
 - secção;
 - máquina;
 - equipa;
+- turno: manhã, tarde ou noite;
 - trabalhadores presentes;
 - OF/trabalhos;
 - RNC;
@@ -54,7 +55,9 @@ Gestão das bases da fábrica:
 - secções;
 - máquinas;
 - equipas;
-- trabalhadores.
+- trabalhadores;
+- turno habitual da equipa;
+- turno habitual do trabalhador.
 
 Máquinas iniciais:
 
@@ -89,6 +92,7 @@ Cada entidade deve ter uma ficha própria.
 #### Ficha da equipa
 
 - secção habitual;
+- turno habitual: manhã, tarde ou noite;
 - membros;
 - OF;
 - RNC;
@@ -108,6 +112,7 @@ Campos previstos:
 - idade calculada;
 - função;
 - equipa atual;
+- turno habitual: manhã, tarde ou noite;
 - anos na empresa;
 - anos na impressão;
 - escolaridade futura;
@@ -128,9 +133,13 @@ Objetivo: permitir cruzamentos como:
 - idade média por equipa;
 - equipas com melhor taxa;
 - máquinas com mais RNC;
+- produção por turno;
+- RNC por turno;
+- taxa RNC/100 OF por turno;
+- comparação entre manhã, tarde e noite;
 - impacto de experiência/formação na taxa de RNC;
 - comparação antes/depois de formação;
-- melhores combinações equipa + máquina.
+- melhores combinações equipa + máquina + turno.
 
 ### 6. Dados
 
@@ -142,6 +151,7 @@ O ficheiro JSON deve guardar tudo:
 - máquinas;
 - equipas;
 - trabalhadores;
+- turnos;
 - registos de produção;
 - causas de RNC;
 - formações futuras;
@@ -154,7 +164,7 @@ Isto permite usar a app no telemóvel, exportar o ficheiro e voltar a importar n
 Funcionalidade futura:
 
 - importar fotografia de relatório/quadro/gráfico;
-- a IA lê OF, RNC, máquinas, equipas, datas e causas;
+- a IA lê OF, RNC, máquinas, equipas, turnos, datas e causas;
 - a app mostra uma pré-confirmação;
 - o utilizador confirma;
 - os dados entram automaticamente no JSON.
@@ -175,6 +185,30 @@ Funcionalidade futura:
 }
 ```
 
+Exemplo de equipa:
+
+```json
+{
+  "id": "equipa-a",
+  "name": "Equipa A",
+  "sectionId": "flexo",
+  "shift": "Manhã"
+}
+```
+
+Exemplo de trabalhador:
+
+```json
+{
+  "id": "trab-001",
+  "name": "João Silva",
+  "teamId": "equipa-a",
+  "shift": "Manhã",
+  "nationality": "Portuguesa",
+  "yearsPrinting": 12
+}
+```
+
 Exemplo de registo de produção:
 
 ```json
@@ -184,6 +218,7 @@ Exemplo de registo de produção:
   "sectionId": "flexo",
   "machineId": "IF4",
   "teamId": "equipa-a",
+  "shift": "Manhã",
   "workerIds": ["trab-001", "trab-002"],
   "jobs": 165,
   "rnc": 9,
@@ -208,6 +243,7 @@ OF por RNC = OF / RNC
 - OF por RNC: quanto maior, melhor.
 - Verde só deve representar 0 RNC.
 - Qualquer valor acima de zero requer atenção proporcional.
+- Comparações por turno devem ser vistas como sinal estatístico, não como prova de causa. O turno pode refletir muitos fatores: complexidade dos trabalhos, experiência da equipa, disponibilidade de apoio técnico, manutenção, cansaço, urgências ou tipo de cliente.
 
 ## Ideia de evolução futura
 
@@ -235,5 +271,5 @@ Prioridade atual:
 1. base de dados local em JSON;
 2. estrutura robusta;
 3. fichas por entidade;
-4. registo de produção ligado a secção, máquina, equipa e trabalhadores;
+4. registo de produção ligado a secção, máquina, equipa, turno e trabalhadores;
 5. exportação/importação de dados.
