@@ -12,9 +12,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { InfoTip } from '@/components/InfoTip'
-import type { Db, Machine, Section } from '@/lib/types'
+import type { Db, Machine } from '@/lib/types'
 import { aggregate, fmt, MONTHS, recordsFor, sectionName } from '@/lib/db'
-import { machineColor, sectionColor } from '@/lib/colors'
+import { machineColor, machineDash, sectionColor } from '@/lib/colors'
 import { taxaTone, toneVar } from '@/lib/severity'
 
 function machineInfo(db: Db, m: Machine): string {
@@ -23,101 +23,111 @@ function machineInfo(db: Db, m: Machine): string {
   return `Máquina de ${tipo} (secção ${sectionName(db, m.sectionId)})${estado}`
 }
 
-function Bar({ value, max, color }: { value: number; max: number; color: string }) {
-  return (
-    <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-      <div
-        className="h-full rounded-full transition-all"
-        style={{ width: `${max ? Math.max(value > 0 ? 4 : 0, (value / max) * 100) : 0}%`, background: color }}
-      />
-    </div>
-  )
-}
+const SECTION_ORDER: Record<string, number> = { flexo: 0, roto: 1 }
+const BARS_HEIGHT = 240
 
-/** Uma secção: lista de máquinas com barra de OF (cor da secção) e barra de RNC (cor por severidade). */
-function SectionCard({ db, section }: { db: Db; section: Section }) {
+/** Um gráfico de barras verticais com todas as máquinas: Flexografia primeiro, Rotogravura depois.
+ *  Barra larga = OF (cor da secção). Barra estreita = RNC (cor por severidade).
+ *  A melhor e a pior máquina (por taxa) ficam destacadas com animação. */
+function MachinesChart({ db }: { db: Db }) {
   const all = recordsFor(db, {})
-  const rows = db.machines
-    .filter((m) => m.sectionId === section.id)
+  const rows = [...db.machines]
+    .sort((a, b) => (SECTION_ORDER[a.sectionId] ?? 9) - (SECTION_ORDER[b.sectionId] ?? 9))
     .map((m) => ({ m, a: aggregate(all.filter((r) => r.machineId === m.id)) }))
+
   const maxOf = Math.max(...rows.map((x) => x.a.of), 1)
   const maxRnc = Math.max(...rows.map((x) => x.a.rnc), 1)
+
+  const rated = rows.filter((x) => x.a.of > 0 && x.a.taxa !== null)
+  const sortedByTaxa = [...rated].sort((a, b) => (a.a.taxa || 0) - (b.a.taxa || 0))
+  const bestId = sortedByTaxa[0]?.m.id
+  const worstId = sortedByTaxa[sortedByTaxa.length - 1]?.m.id
+
+  const pct = (v: number, max: number) => (max ? Math.max(v > 0 ? 3 : 0, (v / max) * 100) : 0)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <span className="size-3 rounded-full" style={{ background: sectionColor(section.id) }} />
-          {section.name}
-          <InfoTip text={`Máquinas da secção de ${section.name}. Barra colorida = OF (trabalhos). Barra ao lado = RNC (defeitos), com cor pela taxa: verde 0, âmbar até 5%, vermelho acima.`} />
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+          Trabalhos e defeitos por máquina
+          <InfoTip text="Todas as máquinas juntas para comparar a secção de impressão e as suas duas sub-secções. Barra larga = OF (trabalhos), na cor da secção. Barra estreita = RNC (defeitos), com cor pela taxa. A melhor e a pior máquina estão destacadas." />
         </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {rows.map((x) => (
-          <div key={x.m.id} className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="flex items-center gap-1.5 font-medium">
-                  {x.m.name}
-                  <InfoTip text={machineInfo(db, x.m)} label={`O que é ${x.m.name}`} />
-                </span>
-                <span className="text-muted-foreground tabular-nums">{x.a.of} OF</span>
-              </div>
-              <Bar value={x.a.of} max={maxOf} color={sectionColor(section.id)} />
-            </div>
-            <div>
-              <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">RNC</span>
-                <span className="tabular-nums" style={{ color: toneVar[taxaTone(x.a.taxa)] }}>
-                  {x.a.rnc} · {fmt(x.a.taxa)}
-                </span>
-              </div>
-              <Bar value={x.a.rnc} max={maxRnc} color={toneVar[taxaTone(x.a.taxa)]} />
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  )
-}
-
-function Highlight({
-  db,
-  kind,
-  item,
-}: {
-  db: Db
-  kind: 'best' | 'worst'
-  item?: { m: Machine; a: ReturnType<typeof aggregate> }
-}) {
-  const isBest = kind === 'best'
-  const color = isBest ? 'var(--success)' : 'var(--destructive)'
-  return (
-    <Card className="border-l-4" style={{ borderLeftColor: color }}>
-      <CardContent className="px-5 py-4">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          {isBest ? 'Melhor máquina' : 'Pior máquina'}
-          <InfoTip
-            text={
-              isBest
-                ? 'Máquina com menor taxa de RNC por 100 OF — a que produz com menos defeitos por trabalho.'
-                : 'Máquina com maior taxa de RNC por 100 OF — a que mais defeitos tem por trabalho.'
-            }
-          />
+        {/* legenda */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="size-3 rounded-sm" style={{ background: sectionColor('flexo') }} /> OF Flexografia
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-3 rounded-sm" style={{ background: sectionColor('roto') }} /> OF Rotogravura
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-1.5 rounded-sm bg-muted-foreground" /> RNC (barra estreita)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-flex size-3.5 items-center justify-center rounded-full text-[10px]" style={{ background: 'var(--success)', color: 'white' }}>★</span> melhor
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-flex size-3.5 items-center justify-center rounded-full text-[10px]" style={{ background: 'var(--destructive)', color: 'white' }}>!</span> pior
+          </span>
         </div>
-        {item ? (
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="flex items-center gap-1.5 text-2xl font-semibold">
-              {item.m.name}
-              <InfoTip text={machineInfo(db, item.m)} label={`O que é ${item.m.name}`} />
-            </span>
-            <span className="text-lg font-medium" style={{ color }}>
-              {fmt(item.a.taxa)}
-            </span>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm text-muted-foreground">Sem dados suficientes.</p>
-        )}
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end gap-1.5 overflow-x-auto pb-1 sm:gap-2">
+          {rows.map((x, i) => {
+            const prev = rows[i - 1]
+            const newSection = !prev || prev.m.sectionId !== x.m.sectionId
+            const isBest = x.m.id === bestId
+            const isWorst = x.m.id === worstId
+            const rncColor = toneVar[taxaTone(x.a.taxa)]
+            return (
+              <div key={x.m.id} className="flex items-end">
+                {newSection && i > 0 && <div className="mx-1 h-[300px] w-px self-stretch bg-border" />}
+                <div
+                  className={`flex min-w-[52px] flex-1 flex-col items-center gap-1 rounded-lg px-1 pt-1 ${
+                    isBest ? 'omp-best bg-success/10' : isWorst ? 'omp-worst bg-destructive/10' : ''
+                  }`}
+                >
+                  <div className="flex h-5 items-center text-xs">
+                    {isBest && (
+                      <span className="omp-bob font-semibold" style={{ color: 'var(--success)' }}>★ melhor</span>
+                    )}
+                    {isWorst && (
+                      <span className="omp-bob font-semibold" style={{ color: 'var(--destructive)' }}>! pior</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] font-medium tabular-nums">{x.a.of}</div>
+                  <div className="flex w-full items-end justify-center gap-1" style={{ height: BARS_HEIGHT }}>
+                    <div
+                      className="w-4 rounded-t transition-all sm:w-5"
+                      style={{ height: `${pct(x.a.of, maxOf)}%`, background: sectionColor(x.m.sectionId) }}
+                      title={`${x.m.name} — ${x.a.of} OF`}
+                    />
+                    <div
+                      className="w-2 rounded-t transition-all"
+                      style={{ height: `${pct(x.a.rnc, maxRnc) * 0.7}%`, background: rncColor }}
+                      title={`${x.m.name} — ${x.a.rnc} RNC (${fmt(x.a.taxa)})`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1 text-xs font-medium">
+                    {x.m.name}
+                    <InfoTip text={machineInfo(db, x.m)} label={`O que é ${x.m.name}`} />
+                  </div>
+                  <div className="text-[11px] tabular-nums" style={{ color: rncColor }}>
+                    {x.a.rnc} RNC · {fmt(x.a.taxa)}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full" style={{ background: sectionColor('flexo') }} /> Flexografia (IF)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full" style={{ background: sectionColor('roto') }} /> Rotogravura (IR)
+          </span>
+        </div>
       </CardContent>
     </Card>
   )
@@ -166,7 +176,7 @@ function TrendChart({ db }: { db: Db }) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-1.5 text-base">
           Tendência ao longo dos meses
-          <InfoTip text="Evolução mês a mês de cada máquina. Cada linha é uma máquina; sobe = mais, desce = menos. Escolhe ver OF (trabalhos) ou RNC (defeitos)." />
+          <InfoTip text="Evolução mês a mês de cada máquina. Cada máquina tem uma cor e um traço próprios (contínuo, tracejado, pontilhado…) para se distinguirem mesmo com dificuldade em ver cores. Sobe = mais, desce = menos." />
         </CardTitle>
         <div className="flex flex-wrap gap-3 pt-2">
           <div className="flex gap-1.5">
@@ -184,7 +194,7 @@ function TrendChart({ db }: { db: Db }) {
         {data.length === 0 ? (
           <p className="text-sm text-muted-foreground">Ainda não há meses com dados.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={340}>
             <LineChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
@@ -205,9 +215,11 @@ function TrendChart({ db }: { db: Db }) {
                   type="monotone"
                   dataKey={m.name}
                   stroke={machineColor(db, m.id)}
-                  strokeWidth={2}
-                  dot={{ r: 2 }}
-                  activeDot={{ r: 5 }}
+                  strokeWidth={2.5}
+                  strokeDasharray={machineDash(db, m.id) || undefined}
+                  dot={{ r: 3, strokeWidth: 0, fill: machineColor(db, m.id) }}
+                  activeDot={{ r: 6 }}
+                  connectNulls
                 />
               ))}
             </LineChart>
@@ -219,14 +231,6 @@ function TrendChart({ db }: { db: Db }) {
 }
 
 export function Production({ db }: { db: Db }) {
-  const all = recordsFor(db, {})
-  const rated = db.machines
-    .map((m) => ({ m, a: aggregate(all.filter((r) => r.machineId === m.id)) }))
-    .filter((x) => x.a.of > 0 && x.a.taxa !== null)
-    .sort((a, b) => (a.a.taxa || 0) - (b.a.taxa || 0))
-  const best = rated[0]
-  const worst = rated[rated.length - 1]
-
   return (
     <div className="space-y-5">
       <div>
@@ -236,17 +240,7 @@ export function Production({ db }: { db: Db }) {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Highlight db={db} kind="best" item={best} />
-        <Highlight db={db} kind="worst" item={worst} />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {db.sections.map((s) => (
-          <SectionCard key={s.id} db={db} section={s} />
-        ))}
-      </div>
-
+      <MachinesChart db={db} />
       <TrendChart db={db} />
     </div>
   )
