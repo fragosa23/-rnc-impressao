@@ -1,64 +1,50 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { AppShell, type ViewId } from '@/components/AppShell'
+import { Dashboard } from '@/views/Dashboard'
+import { loadDb } from '@/lib/db'
 
-const STATUS = [
-  { label: '0 RNC — Ótimo', className: 'bg-success text-success-foreground' },
-  { label: 'Atenção', className: 'bg-warning text-warning-foreground' },
-  { label: 'Crítico', className: 'bg-destructive text-white' },
-]
+function Placeholder({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border bg-card p-8 text-center text-card-foreground">
+      <h1 className="text-xl font-semibold">{label}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Este ecrã está a ser reconstruído na nova versão. Chega em breve.
+      </p>
+    </div>
+  )
+}
 
 function App() {
+  const [view, setView] = useState<ViewId>('dashboard')
   const [dark, setDark] = useState(false)
+  const db = loadDb()
 
-  const toggle = () => {
+  useEffect(() => {
+    const saved = localStorage.getItem('omp_theme') === 'dark'
+    setDark(saved)
+    document.documentElement.classList.toggle('dark', saved)
+  }, [])
+
+  const toggleTheme = () => {
     const next = !dark
     setDark(next)
     document.documentElement.classList.toggle('dark', next)
+    localStorage.setItem('omp_theme', next ? 'dark' : 'light')
   }
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-            O
-          </div>
-          <span className="text-lg font-semibold">
-            Obania <span className="text-primary">Metrics</span> App
-          </span>
-        </div>
-        <Button variant="outline" size="sm" onClick={toggle}>
-          {dark ? '☀️ Claro' : '🌙 Escuro'}
-        </Button>
-      </header>
-
-      <main className="mx-auto max-w-3xl space-y-6 p-6">
-        <div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
-          <h1 className="text-xl font-semibold">Base moderna a funcionar ✅</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            React + Vite + Tailwind + shadcn/ui. As cores de estado das RNC e o
-            modo claro/escuro já estão ligados aos <em>tokens</em> de design.
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            {STATUS.map((s) => (
-              <span
-                key={s.label}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium ${s.className}`}
-              >
-                {s.label}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-6 flex gap-3">
-            <Button>Ação principal</Button>
-            <Button variant="secondary">Secundária</Button>
-            <Button variant="outline">Contorno</Button>
-          </div>
-        </div>
-      </main>
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <AppShell view={view} onNavigate={setView} dark={dark} onToggleTheme={toggleTheme}>
+        {view === 'dashboard' && <Dashboard db={db} />}
+        {view === 'production' && <Placeholder label="Produção" />}
+        {view === 'structure' && <Placeholder label="Estrutura operacional" />}
+        {view === 'profiles' && <Placeholder label="Fichas" />}
+        {view === 'stats' && <Placeholder label="Estatística" />}
+        {view === 'data' && <Placeholder label="Dados" />}
+        {view === 'ai' && <Placeholder label="Assistente IA" />}
+      </AppShell>
+    </TooltipProvider>
   )
 }
 
