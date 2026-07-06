@@ -32,7 +32,14 @@
           <div><label>&nbsp;</label><button class="secondary" id="loadMonth">Carregar mês</button></div>
         </div>
         <p><button class="secondary" id="loadExample">Carregar exemplo maio</button><button class="secondary" id="clearInputs">Limpar valores do ecrã</button><button class="danger" id="deleteMonth">Apagar mês guardado</button></p>
-        <div id="saveStatus" class="saved small">Os dados ficam guardados neste browser.</div>
+        <div class="card backup-card no-print">
+          <h2>Cópia de segurança</h2>
+          <p class="small">Exporta um ficheiro JSON para o telemóvel. Quando voltares a abrir a app noutro browser ou dispositivo, importa esse ficheiro para recuperar os dados.</p>
+          <button id="exportBackup">Guardar ficheiro de dados</button>
+          <label class="import-label" for="importBackup">Importar ficheiro de dados</label>
+          <input id="importBackup" type="file" accept="application/json,.json">
+        </div>
+        <div id="saveStatus" class="saved small">Os dados ficam guardados neste browser. Usa a cópia de segurança para guardar também num ficheiro.</div>
         <table><thead><tr><th>Secção</th><th>Máquina</th><th>Trabalhos / OF</th><th>Não conformidades / RNC</th></tr></thead><tbody id="inputRows"></tbody></table>
       </div>
     </section>
