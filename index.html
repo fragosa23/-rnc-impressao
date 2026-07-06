@@ -11,12 +11,13 @@
     <section id="home" class="screen active">
       <div class="hero">
         <h1>RNC Impressão</h1>
-        <p>Painel mensal e acumulado anual para Flexografia e Rotogravura.</p>
+        <p>Painel mensal, acumulado anual e comparação entre Flexografia e Rotogravura.</p>
       </div>
       <div class="menu-grid">
         <button class="menu-btn" data-go="input"><b>1. Introduzir e armazenar dados</b><span>Preencher OF/trabalhos e RNC por máquina. Guardar mês no browser.</span></button>
         <button class="menu-btn" data-go="monthly"><b>2. Relatório mensal</b><span>Ver mês a mês. Usa as setas ou swipe lateral para alternar meses.</span></button>
         <button class="menu-btn" data-go="annual"><b>3. Acumulados do ano</b><span>Ver totais anuais. Usa as setas ou swipe lateral para alternar anos.</span></button>
+        <button class="menu-btn" data-go="comparison"><b>4. Comparação entre secções</b><span>Comparar OF, RNC, percentagens, taxa e indicadores de desempenho relativo.</span></button>
       </div>
     </section>
 
@@ -46,6 +47,12 @@
       <div class="hero topbar"><div><h1>Acumulados do ano</h1><p>Swipe para os lados ou usa as setas.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div>
       <div class="card month-year-nav no-print"><button id="prevYear">‹</button><div class="big-title" id="annualTitle">—</div><button id="nextYear">›</button></div>
       <div id="annualReport"></div>
+    </section>
+
+    <section id="comparison" class="screen swipe-box">
+      <div class="hero topbar"><div><h1>Comparação entre secções</h1><p>OF, RNC, percentagens e indicadores relativos para comparar Flexografia e Rotogravura.</p></div><div class="nav-btns no-print"><button class="secondary" data-go="home">Menu inicial</button><button class="secondary" onclick="window.print()">Imprimir / PDF</button></div></div>
+      <div class="card month-year-nav no-print"><button id="prevCompMonth">‹</button><div class="big-title" id="comparisonTitle">—</div><button id="nextCompMonth">›</button></div>
+      <div id="comparisonReport"></div>
     </section>
   </main>
 
