@@ -1,5 +1,16 @@
+import { useMemo, useState } from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RTooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { InfoTip } from '@/components/InfoTip'
 import type { Db } from '@/lib/types'
 import {
@@ -7,6 +18,7 @@ import {
   fmt,
   fmtOfRnc,
   machineName,
+  MONTHS,
   recordsFor,
   sectionName,
 } from '@/lib/db'
@@ -187,31 +199,89 @@ function MachineRanking({
 
 export function Dashboard({ db }: { db: Db }) {
   const allRecords = recordsFor(db, {})
-  const years = allRecords.map((r) => r.year)
-  const thisYear = years.length ? Math.max(...years) : new Date().getFullYear()
-  const yearRecords = recordsFor(db, { year: thisYear })
-  const a = aggregate(yearRecords)
-  const health = healthIndex(db, yearRecords, allRecords)
-  const healthTone = HEALTH_TONE[health.label] ?? 'neutral'
 
-  // alertas: pior máquina por taxa
+  // Períodos disponíveis: o ano inteiro e cada mês com dados registados.
+  const { options, defaultKey } = useMemo(() => {
+    const years = [...new Set(allRecords.map((r) => r.year))].sort((x, y) => y - x)
+    const opts: { value: string; label: string; isYear: boolean }[] = []
+    years.forEach((y) => {
+      opts.push({ value: `${y}`, label: `Ano ${y} (todos os meses)`, isYear: true })
+      const months = [...new Set(allRecords.filter((r) => r.year === y).map((r) => r.month))].sort(
+        (a, b) => b - a,
+      )
+      months.forEach((m) => opts.push({ value: `${y}-${m}`, label: `${MONTHS[m]} ${y}`, isYear: false }))
+    })
+    const fallback = years.length ? `${years[0]}` : `${new Date().getFullYear()}`
+    return { options: opts, defaultKey: fallback }
+  }, [allRecords])
+
+  const [periodKey, setPeriodKey] = useState(defaultKey)
+  const [yearStr, monthStr] = periodKey.split('-')
+  const year = Number(yearStr)
+  const month = monthStr !== undefined ? Number(monthStr) : undefined
+  const isYear = month === undefined
+
+  const records = isYear ? recordsFor(db, { year }) : recordsFor(db, { year, month })
+  const a = aggregate(records)
+  const health = healthIndex(db, records, allRecords)
+  const healthTone = HEALTH_TONE[health.label] ?? 'neutral'
+  const periodLabel = isYear ? `${year}` : `${MONTHS[month!]} ${year}`
+
+  // alertas: pior máquina por taxa no período escolhido
   const byMachine = db.machines
-    .map((m) => ({ m, agg: aggregate(allRecords.filter((r) => r.machineId === m.id)) }))
+    .map((m) => ({ m, agg: aggregate(records.filter((r) => r.machineId === m.id)) }))
     .filter((x) => x.agg.of > 0)
     .sort((x, y) => (y.agg.taxa || 0) - (x.agg.taxa || 0))
   const worst = byMachine[0]
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard — {thisYear}</h1>
-        <p className="text-sm text-muted-foreground">
-          Visão rápida do ano. Passa o cursor sobre o ícone{' '}
-          <span className="inline-flex align-middle">
-            <InfoTip text="É assim que cada dado se explica a si próprio." />
-          </span>{' '}
-          para perceber cada indicador.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard — {periodLabel}</h1>
+          <p className="text-sm text-muted-foreground">
+            Escolhe o período à direita. Passa o cursor sobre o ícone{' '}
+            <span className="inline-flex align-middle">
+              <InfoTip text="É assim que cada dado se explica a si próprio." />
+            </span>{' '}
+            para perceber cada indicador.
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Select value={periodKey} onValueChange={setPeriodKey}>
+            <SelectTrigger className="w-[190px]" aria-label="Escolher período">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Ano inteiro</SelectLabel>
+                {options
+                  .filter((o) => o.isYear)
+                  .map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+              </SelectGroup>
+              {options.some((o) => !o.isYear) && (
+                <>
+                  <SelectSeparator />
+                  <SelectGroup>
+                    <SelectLabel>Meses com dados</SelectLabel>
+                    {options
+                      .filter((o) => !o.isYear)
+                      .map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                  </SelectGroup>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+          <InfoTip text="Vê os indicadores do ano inteiro ou de um mês específico. Só aparecem meses de que já há dados ou relatórios." />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -263,14 +333,14 @@ export function Dashboard({ db }: { db: Db }) {
           title="RNC por secção"
           info="Distribuição dos defeitos entre Flexografia e Rotogravura."
           metric="rnc"
-          records={yearRecords}
+          records={records}
         />
         <SectionDonut
           db={db}
           title="OF por secção"
           info="Distribuição dos trabalhos produzidos entre as duas secções."
           metric="of"
-          records={yearRecords}
+          records={records}
         />
       </div>
 
@@ -280,7 +350,7 @@ export function Dashboard({ db }: { db: Db }) {
           title="Top 3 máquinas com mais trabalho"
           info="As máquinas que mais OF produziram este ano."
           metric="of"
-          records={yearRecords}
+          records={records}
           colorByTone={false}
         />
         <MachineRanking
@@ -288,7 +358,7 @@ export function Dashboard({ db }: { db: Db }) {
           title="Piores 3 máquinas por RNC"
           info="As máquinas com mais defeitos este ano. A cor da barra segue a taxa: verde = 0, âmbar até 5%, vermelho acima."
           metric="rnc"
-          records={yearRecords}
+          records={records}
           colorByTone
         />
       </div>
@@ -309,7 +379,7 @@ export function Dashboard({ db }: { db: Db }) {
                 ({fmt(worst.agg.taxa)}).
               </p>
               <p className="text-muted-foreground">
-                Média global: <span className="font-medium text-foreground">{fmt(a.taxa)}</span>.
+                Média do período: <span className="font-medium text-foreground">{fmt(a.taxa)}</span>.
               </p>
             </>
           ) : (
