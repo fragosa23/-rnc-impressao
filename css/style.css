@@ -229,6 +229,7 @@ tbody tr:hover td,tr:hover td{background:var(--surface2)}
   transition:background .15s,border-color .15s;
 }
 .chip:hover{background:var(--accent-soft);border-color:var(--accent)}
+.chip.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .chat-input{display:flex;gap:8px}
 .chat-input input{flex:1}
 .chat-input .btn{margin-top:0}

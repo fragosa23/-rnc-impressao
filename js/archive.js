@@ -2,6 +2,17 @@ function renderData(){
   const archives=getArchives();
   $("data").innerHTML=`
     <div class="card">
+      <h2>+ Novo</h2>
+      <p class="small">Escolhe o tipo de dado que queres criar.</p>
+      <div class="chips" id="quickAddChips">
+        <button class="chip" data-type="worker">Trabalhador</button>
+        <button class="chip" data-type="team">Equipa</button>
+        <button class="chip" data-type="machine">Máquina</button>
+        <button class="chip" data-type="rnc">Registo RNC rápido</button>
+      </div>
+      <div id="quickAddForm"></div>
+    </div>
+    <div class="card">
       <h2>Dados</h2>
       <button class="btn" id="exportBtn">Exportar JSON</button>
       <label class="import-label" for="importFile">Importar JSON</label>
@@ -16,6 +27,7 @@ function renderData(){
   $("exportBtn").onclick=downloadJson;
   $("importFile").onchange=importJson;
   $("archiveList").innerHTML=archives.length?`<table><tr><th>Data</th><th>Motivo</th><th>Registos</th><th>Ação</th></tr>${archives.map(a=>`<tr><td>${new Date(a.createdAt).toLocaleString("pt-PT")}</td><td>${a.reason}</td><td>${(a.db.productionRecords||[]).length}</td><td><button class="btn secondary" onclick="restoreArchiveAndRender('${a.id}')">Restaurar</button></td></tr>`).join("")}</table>`:"<p class='small'>Ainda não há arquivos.</p>";
+  initQuickAdd();
 }
 
 function restoreArchiveAndRender(id){
