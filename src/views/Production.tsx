@@ -252,15 +252,19 @@ function TrendChart({ db }: { db: Db }) {
                     dataKey={m.name}
                     stroke={color}
                     strokeWidth={2.5}
-                    activeDot={{ r: 7 }}
+                    activeDot={false}
                     connectNulls
                     dot={(props: { cx?: number; cy?: number; index?: number }) => {
                       const { cx, cy, index } = props
                       if (cx == null || cy == null) return <g key={`${m.id}-${index}`} />
                       return (
-                        <g key={`${m.id}-${index}`} onMouseEnter={() => setHovered(m.name)}>
-                          <circle cx={cx} cy={cy} r={4} fill={color} />
-                          <circle cx={cx} cy={cy} r={12} fill="transparent" style={{ cursor: 'pointer' }} />
+                        <g
+                          key={`${m.id}-${index}`}
+                          className="omp-dot"
+                          onMouseEnter={() => setHovered(m.name)}
+                        >
+                          <circle className="omp-dot-core" cx={cx} cy={cy} r={4} fill={color} />
+                          <circle cx={cx} cy={cy} r={12} fill="transparent" />
                         </g>
                       )
                     }}

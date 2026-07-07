@@ -161,3 +161,8 @@
 @media (prefers-reduced-motion: reduce) {
   .omp-best, .omp-worst, .omp-bob { animation: none; }
 }
+
+/* Só a bola sob o cursor aumenta (não a coluna toda). */
+.omp-dot { cursor: pointer; }
+.omp-dot-core { transition: r 0.12s ease; }
+.omp-dot:hover .omp-dot-core { r: 7; }
