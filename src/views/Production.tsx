@@ -4,6 +4,7 @@ import {
   Bar,
   CartesianGrid,
   ComposedChart,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -360,7 +361,7 @@ function SectionEvolution({ db, section }: { db: Db; section: Section }) {
         ) : (
           <>
             <ResponsiveContainer width="100%" height={220}>
-              <ComposedChart data={series} margin={{ top: 8, right: 4, left: -12, bottom: 4 }}>
+              <ComposedChart data={series} margin={{ top: 24, right: 4, left: -12, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
                 <YAxis
@@ -377,7 +378,9 @@ function SectionEvolution({ db, section }: { db: Db; section: Section }) {
                   width={28}
                 />
                 <RTooltip content={<EvoTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
-                <Bar yAxisId="of" dataKey="of" fill={sectionColor(section.id)} radius={[3, 3, 0, 0]} maxBarSize={44} />
+                <Bar yAxisId="of" dataKey="of" fill={sectionColor(section.id)} radius={[3, 3, 0, 0]} maxBarSize={44}>
+                  <LabelList dataKey="of" position="top" fontSize={12} fontWeight={600} fill="var(--foreground)" />
+                </Bar>
                 <Line
                   yAxisId="rnc"
                   type="monotone"
@@ -385,7 +388,9 @@ function SectionEvolution({ db, section }: { db: Db; section: Section }) {
                   stroke={RNC_LINE}
                   strokeWidth={2.5}
                   dot={{ r: 3, fill: RNC_LINE, strokeWidth: 0 }}
-                />
+                >
+                  <LabelList dataKey="rnc" position="top" offset={10} fontSize={12} fontWeight={700} fill={RNC_LINE} />
+                </Line>
               </ComposedChart>
             </ResponsiveContainer>
 
