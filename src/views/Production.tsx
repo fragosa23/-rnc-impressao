@@ -316,6 +316,31 @@ interface EvoPoint {
 
 const RNC_LINE = 'var(--destructive)'
 
+/** Etiqueta de RNC junto à bola da linha: com halo (contorno) para ler sobre qualquer barra + pulse. */
+function RncLabel(props: { x?: number; y?: number; value?: number | string }) {
+  const { x, y, value } = props
+  if (x == null || y == null) return null
+  return (
+    <g className="omp-rnc-label">
+      <text
+        x={x}
+        y={y}
+        dy={-10}
+        textAnchor="middle"
+        fontSize={13}
+        fontWeight={800}
+        fill={RNC_LINE}
+        stroke="var(--background)"
+        strokeWidth={3}
+        strokeLinejoin="round"
+        paintOrder="stroke"
+      >
+        {value}
+      </text>
+    </g>
+  )
+}
+
 function SectionEvolution({ db, section }: { db: Db; section: Section }) {
   const recs = recordsFor(db, { sectionId: section.id })
   const monthKeys = [...new Set(recs.map((r) => r.year * 12 + r.month))].sort((a, b) => a - b)
@@ -379,7 +404,7 @@ function SectionEvolution({ db, section }: { db: Db; section: Section }) {
                 />
                 <RTooltip content={<EvoTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
                 <Bar yAxisId="of" dataKey="of" fill={sectionColor(section.id)} radius={[3, 3, 0, 0]} maxBarSize={44}>
-                  <LabelList dataKey="of" position="top" fontSize={12} fontWeight={600} fill="var(--foreground)" />
+                  <LabelList dataKey="of" position="insideBottom" offset={10} fontSize={12} fontWeight={700} fill="#ffffff" />
                 </Bar>
                 <Line
                   yAxisId="rnc"
@@ -389,7 +414,7 @@ function SectionEvolution({ db, section }: { db: Db; section: Section }) {
                   strokeWidth={2.5}
                   dot={{ r: 3, fill: RNC_LINE, strokeWidth: 0 }}
                 >
-                  <LabelList dataKey="rnc" position="top" offset={10} fontSize={12} fontWeight={700} fill={RNC_LINE} />
+                  <LabelList dataKey="rnc" content={<RncLabel />} />
                 </Line>
               </ComposedChart>
             </ResponsiveContainer>

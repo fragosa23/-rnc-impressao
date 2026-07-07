@@ -166,3 +166,13 @@
 .omp-dot { cursor: pointer; }
 .omp-dot-core { transition: r 0.12s ease; }
 .omp-dot:hover .omp-dot-core { r: 7; }
+
+/* Etiqueta de RNC nos gráficos de evolução: leve pulse para se notar. */
+@keyframes omp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.omp-rnc-label { animation: omp-pulse 1.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .omp-rnc-label { animation: none; }
+}
