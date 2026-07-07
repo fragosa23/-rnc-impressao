@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { ThumbsDown, ThumbsUp } from 'lucide-react'
 import {
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
   LineChart,
@@ -13,10 +15,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { InfoTip } from '@/components/InfoTip'
-import type { Db, Machine } from '@/lib/types'
+import type { Db, Machine, Section } from '@/lib/types'
 import { aggregate, fmt, MONTHS, recordsFor, sectionName } from '@/lib/db'
 import { machineColor, sectionColor } from '@/lib/colors'
-import { taxaTone, toneVar } from '@/lib/severity'
+import { taxaTone, toneVar, type Tone } from '@/lib/severity'
 
 function machineInfo(db: Db, m: Machine): string {
   const tipo = m.sectionId === 'flexo' ? 'Flexografia' : 'Rotogravura'
@@ -279,6 +281,182 @@ function TrendChart({ db }: { db: Db }) {
   )
 }
 
+interface Delta {
+  arrow: string
+  text: string
+  tone: Tone
+}
+/** Variação face ao mês anterior, com cor por qualidade (OF sobe = bom; RNC sobe = mau). */
+function qualityDelta(curr: number, prev: number | undefined, kind: 'of' | 'rnc'): Delta | null {
+  if (prev === undefined) return null
+  if (prev === 0) {
+    if (curr === 0) return { arrow: '→', text: '0%', tone: 'neutral' }
+    return { arrow: '▲', text: 'novo', tone: kind === 'of' ? 'success' : 'danger' }
+  }
+  const rounded = Math.round(((curr - prev) / prev) * 100)
+  const up = rounded > 0
+  const down = rounded < 0
+  const tone: Tone =
+    kind === 'of'
+      ? up ? 'success' : down ? 'danger' : 'neutral'
+      : up ? 'danger' : down ? 'success' : 'neutral'
+  const sign = rounded > 0 ? '+' : rounded < 0 ? '−' : ''
+  return { arrow: up ? '▲' : down ? '▼' : '→', text: `${sign}${Math.abs(rounded)}%`, tone }
+}
+
+interface EvoPoint {
+  label: string
+  monthName: string
+  of: number
+  rnc: number
+  ofD: Delta | null
+  rncD: Delta | null
+}
+
+const RNC_LINE = 'var(--destructive)'
+
+function SectionEvolution({ db, section }: { db: Db; section: Section }) {
+  const recs = recordsFor(db, { sectionId: section.id })
+  const monthKeys = [...new Set(recs.map((r) => r.year * 12 + r.month))].sort((a, b) => a - b)
+  const series: EvoPoint[] = monthKeys.map((k) => {
+    const y = Math.floor(k / 12)
+    const mo = ((k % 12) + 12) % 12
+    const a = aggregate(recs.filter((r) => r.year === y && r.month === mo))
+    return {
+      label: `${MONTHS[mo].slice(0, 3)} ${String(y).slice(2)}`,
+      monthName: `${MONTHS[mo]} ${y}`,
+      of: a.of,
+      rnc: a.rnc,
+      ofD: null,
+      rncD: null,
+    }
+  })
+  series.forEach((s, i) => {
+    const p = series[i - 1]
+    s.ofD = qualityDelta(s.of, p?.of, 'of')
+    s.rncD = qualityDelta(s.rnc, p?.rnc, 'rnc')
+  })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="size-3 rounded-full" style={{ background: sectionColor(section.id) }} />
+          Evolução — {section.name}
+          <InfoTip text={`Mês a mês, ${section.name}: barras = OF (trabalhos), linha = RNC (defeitos). Por baixo, a variação face ao mês anterior — verde é bom (mais trabalhos ou menos defeitos), vermelho é mau.`} />
+        </CardTitle>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="size-3 rounded-sm" style={{ background: sectionColor(section.id) }} /> OF (barras)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4" style={{ background: RNC_LINE }} /> RNC (linha)
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {series.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem dados para esta secção.</p>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={220}>
+              <ComposedChart data={series} margin={{ top: 8, right: 4, left: -12, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
+                <YAxis
+                  yAxisId="of"
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                  allowDecimals={false}
+                  width={40}
+                />
+                <YAxis
+                  yAxisId="rnc"
+                  orientation="right"
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                  allowDecimals={false}
+                  width={28}
+                />
+                <RTooltip content={<EvoTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                <Bar yAxisId="of" dataKey="of" fill={sectionColor(section.id)} radius={[3, 3, 0, 0]} maxBarSize={44} />
+                <Line
+                  yAxisId="rnc"
+                  type="monotone"
+                  dataKey="rnc"
+                  stroke={RNC_LINE}
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: RNC_LINE, strokeWidth: 0 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+
+            {/* faixa de variação mês a mês */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {series.slice(1).map((s) => (
+                <div key={s.label} className="rounded-md border px-2.5 py-1.5 text-xs">
+                  <div className="font-medium">{s.label}</div>
+                  <div className="mt-0.5 flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1">
+                      <span className="text-muted-foreground">OF</span>
+                      {s.ofD && (
+                        <span className="tabular-nums" style={{ color: toneVar[s.ofD.tone] }}>
+                          {s.ofD.arrow} {s.ofD.text}
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-muted-foreground">RNC</span>
+                      {s.rncD && (
+                        <span className="tabular-nums" style={{ color: toneVar[s.rncD.tone] }}>
+                          {s.rncD.arrow} {s.rncD.text}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function EvoTooltip({ active, payload }: { active?: boolean; payload?: { payload?: EvoPoint }[] }) {
+  if (!active || !payload || !payload.length) return null
+  const d = payload[0]?.payload
+  if (!d) return null
+  const line = (label: string, value: number, delta: Delta | null) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span>
+        {label}: <b>{value}</b>
+      </span>
+      {delta && (
+        <span style={{ color: toneVar[delta.tone] }}>
+          {delta.arrow} {delta.text}
+        </span>
+      )}
+    </div>
+  )
+  return (
+    <div
+      style={{
+        background: 'var(--popover)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        color: 'var(--popover-foreground)',
+        fontSize: 12,
+        padding: '6px 10px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      }}
+    >
+      <div style={{ marginBottom: 3, color: 'var(--muted-foreground)' }}>{d.monthName}</div>
+      {line('OF', d.of, d.ofD)}
+      {line('RNC', d.rnc, d.rncD)}
+    </div>
+  )
+}
+
 export function Production({ db }: { db: Db }) {
   return (
     <div className="space-y-5">
@@ -291,6 +469,12 @@ export function Production({ db }: { db: Db }) {
 
       <MachinesChart db={db} />
       <TrendChart db={db} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {db.sections.map((s) => (
+          <SectionEvolution key={s.id} db={db} section={s} />
+        ))}
+      </div>
     </div>
   )
 }
