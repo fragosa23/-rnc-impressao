@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ThumbsDown, ThumbsUp } from 'lucide-react'
 import {
   CartesianGrid,
   Legend,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { InfoTip } from '@/components/InfoTip'
 import type { Db, Machine } from '@/lib/types'
 import { aggregate, fmt, MONTHS, recordsFor, sectionName } from '@/lib/db'
-import { machineColor, machineDash, sectionColor } from '@/lib/colors'
+import { machineColor, sectionColor } from '@/lib/colors'
 import { taxaTone, toneVar } from '@/lib/severity'
 
 function machineInfo(db: Db, m: Machine): string {
@@ -26,9 +27,9 @@ function machineInfo(db: Db, m: Machine): string {
 const SECTION_ORDER: Record<string, number> = { flexo: 0, roto: 1 }
 const BARS_HEIGHT = 240
 
-/** Um gráfico de barras verticais com todas as máquinas: Flexografia primeiro, Rotogravura depois.
- *  Barra larga = OF (cor da secção). Barra estreita = RNC (cor por severidade).
- *  A melhor e a pior máquina (por taxa) ficam destacadas com animação. */
+/** Barras verticais com todas as máquinas: Flexografia primeiro, Rotogravura depois.
+ *  Barra = OF (cor da secção). Número grande ao lado = RNC (cor por severidade).
+ *  A melhor e a pior máquina (por taxa) ficam destacadas com 👍 / 👎 animados. */
 function MachinesChart({ db }: { db: Db }) {
   const all = recordsFor(db, {})
   const rows = [...db.machines]
@@ -36,7 +37,6 @@ function MachinesChart({ db }: { db: Db }) {
     .map((m) => ({ m, a: aggregate(all.filter((r) => r.machineId === m.id)) }))
 
   const maxOf = Math.max(...rows.map((x) => x.a.of), 1)
-  const maxRnc = Math.max(...rows.map((x) => x.a.rnc), 1)
 
   const rated = rows.filter((x) => x.a.of > 0 && x.a.taxa !== null)
   const sortedByTaxa = [...rated].sort((a, b) => (a.a.taxa || 0) - (b.a.taxa || 0))
@@ -50,9 +50,8 @@ function MachinesChart({ db }: { db: Db }) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           Trabalhos e defeitos por máquina
-          <InfoTip text="Todas as máquinas juntas para comparar a secção de impressão e as suas duas sub-secções. Barra larga = OF (trabalhos), na cor da secção. Barra estreita = RNC (defeitos), com cor pela taxa. A melhor e a pior máquina estão destacadas." />
+          <InfoTip text="Todas as máquinas juntas para comparar a secção de impressão e as suas duas sub-secções. A barra é o OF (trabalhos), na cor da secção. O número grande ao lado é o RNC (defeitos), com cor pela taxa. A melhor e a pior máquina estão destacadas com 👍 e 👎." />
         </CardTitle>
-        {/* legenda */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="size-3 rounded-sm" style={{ background: sectionColor('flexo') }} /> OF Flexografia
@@ -61,13 +60,13 @@ function MachinesChart({ db }: { db: Db }) {
             <span className="size-3 rounded-sm" style={{ background: sectionColor('roto') }} /> OF Rotogravura
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-1.5 rounded-sm bg-muted-foreground" /> RNC (barra estreita)
+            <b className="text-sm text-foreground">12</b> = nº de RNC
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-flex size-3.5 items-center justify-center rounded-full text-[10px]" style={{ background: 'var(--success)', color: 'white' }}>★</span> melhor
+            <ThumbsUp className="size-3.5" style={{ color: 'var(--success)' }} /> melhor
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-flex size-3.5 items-center justify-center rounded-full text-[10px]" style={{ background: 'var(--destructive)', color: 'white' }}>!</span> pior
+            <ThumbsDown className="size-3.5" style={{ color: 'var(--destructive)' }} /> pior
           </span>
         </div>
       </CardHeader>
@@ -83,37 +82,34 @@ function MachinesChart({ db }: { db: Db }) {
               <div key={x.m.id} className="flex items-end">
                 {newSection && i > 0 && <div className="mx-1 h-[300px] w-px self-stretch bg-border" />}
                 <div
-                  className={`flex min-w-[52px] flex-1 flex-col items-center gap-1 rounded-lg px-1 pt-1 ${
+                  className={`flex min-w-[68px] flex-1 flex-col items-center gap-1 rounded-lg px-1.5 pt-1 ${
                     isBest ? 'omp-best bg-success/10' : isWorst ? 'omp-worst bg-destructive/10' : ''
                   }`}
                 >
-                  <div className="flex h-5 items-center text-xs">
-                    {isBest && (
-                      <span className="omp-bob font-semibold" style={{ color: 'var(--success)' }}>★ melhor</span>
-                    )}
-                    {isWorst && (
-                      <span className="omp-bob font-semibold" style={{ color: 'var(--destructive)' }}>! pior</span>
-                    )}
+                  <div className="flex h-6 items-center">
+                    {isBest && <ThumbsUp className="omp-bob size-5" style={{ color: 'var(--success)' }} />}
+                    {isWorst && <ThumbsDown className="omp-bob size-5" style={{ color: 'var(--destructive)' }} />}
                   </div>
-                  <div className="text-[11px] font-medium tabular-nums">{x.a.of}</div>
-                  <div className="flex w-full items-end justify-center gap-1" style={{ height: BARS_HEIGHT }}>
+                  <div className="text-[11px] font-medium tabular-nums text-muted-foreground">{x.a.of} OF</div>
+                  <div className="flex w-full items-end justify-center gap-2" style={{ height: BARS_HEIGHT }}>
                     <div
-                      className="w-4 rounded-t transition-all sm:w-5"
+                      className="w-5 rounded-t transition-all"
                       style={{ height: `${pct(x.a.of, maxOf)}%`, background: sectionColor(x.m.sectionId) }}
                       title={`${x.m.name} — ${x.a.of} OF`}
                     />
-                    <div
-                      className="w-2 rounded-t transition-all"
-                      style={{ height: `${pct(x.a.rnc, maxRnc) * 0.7}%`, background: rncColor }}
-                      title={`${x.m.name} — ${x.a.rnc} RNC (${fmt(x.a.taxa)})`}
-                    />
+                    <div className="flex flex-col items-center self-center leading-none">
+                      <span className="text-[10px] text-muted-foreground">RNC</span>
+                      <span className="text-2xl font-bold tabular-nums" style={{ color: rncColor }}>
+                        {x.a.rnc}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 text-xs font-medium">
                     {x.m.name}
                     <InfoTip text={machineInfo(db, x.m)} label={`O que é ${x.m.name}`} />
                   </div>
-                  <div className="text-[11px] tabular-nums" style={{ color: rncColor }}>
-                    {x.a.rnc} RNC · {fmt(x.a.taxa)}
+                  <div className="text-[11px] tabular-nums text-muted-foreground">
+                    % RNC <span style={{ color: rncColor }}>{fmt(x.a.taxa)}</span>
                   </div>
                 </div>
               </div>
@@ -176,7 +172,7 @@ function TrendChart({ db }: { db: Db }) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-1.5 text-base">
           Tendência ao longo dos meses
-          <InfoTip text="Evolução mês a mês de cada máquina. Cada máquina tem uma cor e um traço próprios (contínuo, tracejado, pontilhado…) para se distinguirem mesmo com dificuldade em ver cores. Sobe = mais, desce = menos." />
+          <InfoTip text="Evolução mês a mês de cada máquina. Passa o cursor sobre um ponto para ver o valor dessa máquina nesse mês. Sobe = mais, desce = menos." />
         </CardTitle>
         <div className="flex flex-wrap gap-3 pt-2">
           <div className="flex gap-1.5">
@@ -200,6 +196,7 @@ function TrendChart({ db }: { db: Db }) {
               <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
               <YAxis tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} allowDecimals={false} width={36} />
               <RTooltip
+                shared={false}
                 contentStyle={{
                   background: 'var(--popover)',
                   border: '1px solid var(--border)',
@@ -216,9 +213,8 @@ function TrendChart({ db }: { db: Db }) {
                   dataKey={m.name}
                   stroke={machineColor(db, m.id)}
                   strokeWidth={2.5}
-                  strokeDasharray={machineDash(db, m.id) || undefined}
-                  dot={{ r: 3, strokeWidth: 0, fill: machineColor(db, m.id) }}
-                  activeDot={{ r: 6 }}
+                  dot={{ r: 4, strokeWidth: 0, fill: machineColor(db, m.id) }}
+                  activeDot={{ r: 7 }}
                   connectNulls
                 />
               ))}
