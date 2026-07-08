@@ -158,20 +158,31 @@
 .omp-worst { animation: omp-bg-worst 1.8s ease-in-out infinite; }
 .omp-bob { animation: omp-bob 1.6s ease-in-out infinite; }
 
-/* Anel a pulsar nos cartões de evolução por máquina (melhor produção / pior RNC). */
-@keyframes omp-ring-best {
-  0%, 100% { box-shadow: 0 0 0 2px var(--success); }
-  50% { box-shadow: 0 0 0 2px var(--success), 0 0 14px 1px color-mix(in srgb, var(--success) 50%, transparent); }
+/* Fundo animado nos cartões de evolução por máquina (melhor produção / pior RNC):
+   gradiente mais intenso em baixo, a desvanecer para cima, com pulse energético. */
+@keyframes omp-energy {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.95; }
 }
-@keyframes omp-ring-worst {
-  0%, 100% { box-shadow: 0 0 0 2px var(--destructive); }
-  50% { box-shadow: 0 0 0 2px var(--destructive), 0 0 14px 1px color-mix(in srgb, var(--destructive) 50%, transparent); }
+.omp-card-best, .omp-card-worst { position: relative; }
+.omp-card-best::after, .omp-card-worst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: omp-energy 1.3s ease-in-out infinite;
 }
-.omp-card-best { box-shadow: 0 0 0 2px var(--success); animation: omp-ring-best 2s ease-in-out infinite; }
-.omp-card-worst { box-shadow: 0 0 0 2px var(--destructive); animation: omp-ring-worst 2s ease-in-out infinite; }
+.omp-card-best::after {
+  background: linear-gradient(to top, color-mix(in srgb, var(--success) 45%, transparent) 0%, transparent 62%);
+}
+.omp-card-worst::after {
+  background: linear-gradient(to top, color-mix(in srgb, var(--destructive) 45%, transparent) 0%, transparent 62%);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .omp-best, .omp-worst, .omp-bob, .omp-card-best, .omp-card-worst { animation: none; }
+  .omp-best, .omp-worst, .omp-bob { animation: none; }
+  .omp-card-best::after, .omp-card-worst::after { animation: none; opacity: 0.7; }
 }
 
 /* Só a bola sob o cursor aumenta (não a coluna toda). */

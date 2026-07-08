@@ -234,7 +234,7 @@ export function Dashboard({ db }: { db: Db }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard — {periodLabel}</h1>
+          <h1 className="text-2xl font-semibold">Dashboard IMPRESSÃO — {periodLabel}</h1>
           <p className="text-sm text-muted-foreground">
             Escolhe o período à direita. Passa o cursor sobre o ícone{' '}
             <span className="inline-flex align-middle">
