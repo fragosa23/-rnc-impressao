@@ -7,8 +7,6 @@ import {
   Database,
   Bot,
   Menu,
-  Moon,
-  Sun,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,14 +37,10 @@ export const VIEWS: { id: ViewId; label: string; icon: typeof LayoutDashboard }[
 export function AppShell({
   view,
   onNavigate,
-  dark,
-  onToggleTheme,
   children,
 }: {
   view: ViewId
   onNavigate: (v: ViewId) => void
-  dark: boolean
-  onToggleTheme: () => void
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -96,11 +90,7 @@ export function AppShell({
               })}
             </nav>
             <div className="mt-auto border-t p-3">
-              <Button variant="outline" className="w-full justify-start gap-2" onClick={onToggleTheme}>
-                {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-                {dark ? 'Mudar para claro' : 'Mudar para escuro'}
-              </Button>
-              <p className="mt-2 text-xs text-muted-foreground">Dados locais no dispositivo · v3</p>
+              <p className="text-xs text-muted-foreground">Dados locais no dispositivo · v3</p>
             </div>
           </SheetContent>
         </Sheet>

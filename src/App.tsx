@@ -16,29 +16,13 @@ function Placeholder({ label }: { label: string }) {
   )
 }
 
-/** Tema automático: usa a escolha guardada; sem escolha prévia, segue a preferência do sistema. */
-function getInitialTheme(): boolean {
-  const saved = localStorage.getItem('omp_theme')
-  const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
-  document.documentElement.classList.toggle('dark', dark)
-  return dark
-}
-
 function App() {
   const [view, setView] = useState<ViewId>('dashboard')
-  const [dark, setDark] = useState(getInitialTheme)
   const db = loadDb()
-
-  const toggleTheme = () => {
-    const next = !dark
-    setDark(next)
-    document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('omp_theme', next ? 'dark' : 'light')
-  }
 
   return (
     <TooltipProvider delayDuration={150}>
-      <AppShell view={view} onNavigate={setView} dark={dark} onToggleTheme={toggleTheme}>
+      <AppShell view={view} onNavigate={setView}>
         {view === 'dashboard' && <Dashboard db={db} />}
         {view === 'production' && <Production db={db} />}
         {view === 'structure' && <Placeholder label="Estrutura operacional" />}
