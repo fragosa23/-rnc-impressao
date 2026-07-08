@@ -161,8 +161,8 @@
 /* Fundo animado nos cartões de evolução por máquina (melhor produção / pior RNC):
    gradiente mais intenso em baixo, a desvanecer para cima, com pulse energético. */
 @keyframes omp-energy {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.95; }
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.55; }
 }
 .omp-card-best, .omp-card-worst { position: relative; }
 .omp-card-best::after, .omp-card-worst::after {
@@ -171,18 +171,18 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  animation: omp-energy 1.3s ease-in-out infinite;
+  animation: omp-energy 1.8s ease-in-out infinite;
 }
 .omp-card-best::after {
-  background: linear-gradient(to top, color-mix(in srgb, var(--success) 45%, transparent) 0%, transparent 62%);
+  background: linear-gradient(to top, color-mix(in srgb, var(--success) 26%, transparent) 0%, transparent 48%);
 }
 .omp-card-worst::after {
-  background: linear-gradient(to top, color-mix(in srgb, var(--destructive) 45%, transparent) 0%, transparent 62%);
+  background: linear-gradient(to top, color-mix(in srgb, var(--destructive) 26%, transparent) 0%, transparent 48%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .omp-best, .omp-worst, .omp-bob { animation: none; }
-  .omp-card-best::after, .omp-card-worst::after { animation: none; opacity: 0.7; }
+  .omp-card-best::after, .omp-card-worst::after { animation: none; opacity: 0.45; }
 }
 
 /* Só a bola sob o cursor aumenta (não a coluna toda). */

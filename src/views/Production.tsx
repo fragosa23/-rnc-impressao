@@ -390,32 +390,44 @@ function EvolutionCard({
   worstRnc?: boolean
 }) {
   const series = evoSeries(records)
+  const total = aggregate(records)
   const ringClass = worstRnc ? 'omp-card-worst' : bestProd ? 'omp-card-best' : ''
 
   return (
     <Card className={ringClass}>
       <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-          <span className="size-3 rounded-full" style={{ background: color }} />
-          {title}
-          <InfoTip text={info} />
-          {bestProd && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
-              style={{ color: 'var(--success)', borderColor: 'var(--success)' }}
-            >
-              <TrendingUp className="size-3" /> Melhor produção
-            </span>
+        <div className="flex items-start justify-between gap-3">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+            <span className="size-3 rounded-full" style={{ background: color }} />
+            {title}
+            <InfoTip text={info} />
+            {bestProd && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                style={{ color: 'var(--success)', borderColor: 'var(--success)' }}
+              >
+                <TrendingUp className="size-3" /> Melhor produção
+              </span>
+            )}
+            {worstRnc && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                style={{ color: 'var(--destructive)', borderColor: 'var(--destructive)' }}
+              >
+                <AlertTriangle className="size-3" /> Pior RNC
+              </span>
+            )}
+          </CardTitle>
+          {series.length > 0 && (
+            <div className="shrink-0 text-right text-xs leading-tight">
+              <div className="text-muted-foreground">Total</div>
+              <div className="font-semibold tabular-nums">
+                {total.of} OF · <span style={{ color: toneVar[taxaTone(total.taxa)] }}>{total.rnc} RNC</span>
+              </div>
+              <div className="tabular-nums text-muted-foreground">{fmt(total.taxa)}</div>
+            </div>
           )}
-          {worstRnc && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
-              style={{ color: 'var(--destructive)', borderColor: 'var(--destructive)' }}
-            >
-              <AlertTriangle className="size-3" /> Pior RNC
-            </span>
-          )}
-        </CardTitle>
+        </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="size-3 rounded-sm" style={{ background: color }} /> OF (barras)
