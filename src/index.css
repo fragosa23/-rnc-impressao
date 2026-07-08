@@ -158,8 +158,20 @@
 .omp-worst { animation: omp-bg-worst 1.8s ease-in-out infinite; }
 .omp-bob { animation: omp-bob 1.6s ease-in-out infinite; }
 
+/* Anel a pulsar nos cartões de evolução por máquina (melhor produção / pior RNC). */
+@keyframes omp-ring-best {
+  0%, 100% { box-shadow: 0 0 0 2px var(--success); }
+  50% { box-shadow: 0 0 0 2px var(--success), 0 0 14px 1px color-mix(in srgb, var(--success) 50%, transparent); }
+}
+@keyframes omp-ring-worst {
+  0%, 100% { box-shadow: 0 0 0 2px var(--destructive); }
+  50% { box-shadow: 0 0 0 2px var(--destructive), 0 0 14px 1px color-mix(in srgb, var(--destructive) 50%, transparent); }
+}
+.omp-card-best { box-shadow: 0 0 0 2px var(--success); animation: omp-ring-best 2s ease-in-out infinite; }
+.omp-card-worst { box-shadow: 0 0 0 2px var(--destructive); animation: omp-ring-worst 2s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .omp-best, .omp-worst, .omp-bob { animation: none; }
+  .omp-best, .omp-worst, .omp-bob, .omp-card-best, .omp-card-worst { animation: none; }
 }
 
 /* Só a bola sob o cursor aumenta (não a coluna toda). */

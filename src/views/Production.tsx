@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ThumbsDown, ThumbsUp } from 'lucide-react'
+import { AlertTriangle, ThumbsDown, ThumbsUp, TrendingUp } from 'lucide-react'
 import {
   Bar,
   CartesianGrid,
@@ -378,22 +378,43 @@ function EvolutionCard({
   records,
   info,
   height = 210,
+  bestProd = false,
+  worstRnc = false,
 }: {
   title: string
   color: string
   records: ProductionRecord[]
   info: string
   height?: number
+  bestProd?: boolean
+  worstRnc?: boolean
 }) {
   const series = evoSeries(records)
+  const ringClass = worstRnc ? 'omp-card-worst' : bestProd ? 'omp-card-best' : ''
 
   return (
-    <Card>
+    <Card className={ringClass}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <span className="size-3 rounded-full" style={{ background: color }} />
           {title}
           <InfoTip text={info} />
+          {bestProd && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+              style={{ color: 'var(--success)', borderColor: 'var(--success)' }}
+            >
+              <TrendingUp className="size-3" /> Melhor produção
+            </span>
+          )}
+          {worstRnc && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+              style={{ color: 'var(--destructive)', borderColor: 'var(--destructive)' }}
+            >
+              <AlertTriangle className="size-3" /> Pior RNC
+            </span>
+          )}
         </CardTitle>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
@@ -546,6 +567,14 @@ export function Production({ db }: { db: Db }) {
 
       {db.sections.map((section) => {
         const machines = db.machines.filter((m) => m.sectionId === section.id)
+        const stats = machines.map((m) => ({ m, a: aggregate(recordsFor(db, { machineId: m.id, year })) }))
+        const withData = stats.filter((x) => x.a.of > 0)
+        const bestProdId = withData.length
+          ? withData.reduce((b, x) => (x.a.of > b.a.of ? x : b)).m.id
+          : null
+        const worstRncId = withData.length
+          ? withData.reduce((w, x) => (x.a.rnc > w.a.rnc ? x : w)).m.id
+          : null
         return (
           <div key={section.id} className="space-y-3">
             <EvolutionCard
@@ -564,6 +593,8 @@ export function Production({ db }: { db: Db }) {
                   records={recordsFor(db, { machineId: m.id, year })}
                   info={`Evolução mês a mês da máquina ${m.name}: OF (barras) e RNC (linha), com a variação face ao mês anterior.`}
                   height={170}
+                  bestProd={m.id === bestProdId}
+                  worstRnc={m.id === worstRncId}
                 />
               ))}
             </div>
