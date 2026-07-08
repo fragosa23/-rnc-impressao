@@ -41,7 +41,6 @@ function App() {
         {view === 'production' && <Production db={db} />}
         {view === 'structure' && <Placeholder label="Estrutura operacional" />}
         {view === 'profiles' && <Placeholder label="Fichas" />}
-        {view === 'stats' && <Placeholder label="Estatística" />}
         {view === 'data' && <Placeholder label="Dados" />}
         {view === 'ai' && <Placeholder label="Assistente IA" />}
       </AppShell>

@@ -4,7 +4,6 @@ import {
   Factory,
   Boxes,
   IdCard,
-  BarChart3,
   Database,
   Bot,
   Menu,
@@ -25,7 +24,6 @@ export type ViewId =
   | 'production'
   | 'structure'
   | 'profiles'
-  | 'stats'
   | 'data'
   | 'ai'
 
@@ -34,7 +32,6 @@ export const VIEWS: { id: ViewId; label: string; icon: typeof LayoutDashboard }[
   { id: 'production', label: 'Produção', icon: Factory },
   { id: 'structure', label: 'Estrutura', icon: Boxes },
   { id: 'profiles', label: 'Fichas', icon: IdCard },
-  { id: 'stats', label: 'Estatística', icon: BarChart3 },
   { id: 'data', label: 'Dados', icon: Database },
   { id: 'ai', label: 'Assistente IA', icon: Bot },
 ]
