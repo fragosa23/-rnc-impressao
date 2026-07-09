@@ -35,6 +35,7 @@ import type {
   Db,
   Machine,
   PlaceKind,
+  ShiftRegime,
   Team,
   WorkArea,
   Worker,
@@ -48,10 +49,13 @@ import {
   printingMonths,
   reconcileWorkerHistory,
   recordShift,
+  SCHEDULE_OPTIONS,
   sectionName,
+  SHIFT_HOURS,
   SHIFTS,
   teamAutoName,
   teamName,
+  teamRegimeLabel,
   uid,
   workerLabel,
 } from '@/lib/db'
@@ -315,7 +319,11 @@ function TeamForm({
   const [t, setT] = useState<Team>(
     initial
       ? clone(initial)
-      : { id: '', name: '', sectionId: '', machineId: '', shift: 'Manhã', members: [] },
+      : { id: '', name: '', sectionId: '', machineId: '', regime: 'rot3', shift: '', schedule: '', members: [] },
+  )
+  // Guarda se o horário está em modo "Outro" (escrito à mão).
+  const [customSchedule, setCustomSchedule] = useState<boolean>(
+    !!initial?.schedule && !SCHEDULE_OPTIONS.includes(initial.schedule as (typeof SCHEDULE_OPTIONS)[number]),
   )
   const set = (patch: Partial<Team>) => setT((prev) => ({ ...prev, ...patch }))
 
@@ -329,6 +337,23 @@ function TeamForm({
       name: t.name.trim() ? t.name : auto,
     })
   }
+
+  // Ao mudar o regime: se não é fixo, limpa turno e horário.
+  const onRegime = (regime: ShiftRegime) => {
+    if (regime === 'fixo') {
+      const shift = t.shift || 'Manhã'
+      set({ regime, shift, schedule: t.schedule || SHIFT_HOURS[shift] || '' })
+    } else {
+      set({ regime, shift: '', schedule: '' })
+    }
+  }
+  // Ao escolher o turno fixo, sugere o horário correspondente (se ainda não for personalizado).
+  const onFixedShift = (shift: string) => {
+    if (customSchedule) set({ shift })
+    else set({ shift, schedule: SHIFT_HOURS[shift] || '' })
+  }
+
+  const regime = t.regime || 'rot3'
   const valid = t.machineId !== '' && t.name.trim().length > 0
 
   return (
@@ -355,21 +380,75 @@ function TeamForm({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Turno base" info="O turno principal da equipa. Como os turnos rodam, o histórico real vê-se pela distribuição de turnos.">
-          <Select value={t.shift || undefined} onValueChange={(v) => set({ shift: v })}>
+        <Field
+          label="Regime de turno"
+          info="Como funciona o turno da equipa: rotativo pelos três turnos (M/T/N), rotativo por dois (M/T), ou fixo num turno só."
+        >
+          <Select value={regime} onValueChange={(v) => onRegime(v as ShiftRegime)}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Escolher turno" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SHIFTS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
+              <SelectItem value="rot3">Rotativo M/T/N</SelectItem>
+              <SelectItem value="rot2">Rotativo M/T</SelectItem>
+              <SelectItem value="fixo">Fixo</SelectItem>
             </SelectContent>
           </Select>
         </Field>
       </div>
+
+      {regime === 'fixo' && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Turno fixo" info="Qual o turno em que esta equipa trabalha sempre.">
+            <Select value={t.shift || undefined} onValueChange={onFixedShift}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Escolher turno" />
+              </SelectTrigger>
+              <SelectContent>
+                {SHIFTS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Horário" info="As horas do turno. Escolhe um horário da lista ou 'Outro' para escrever um diferente. Podes acrescentar ou editar os horários e turnos disponíveis em Configurações › Horários e Turnos.">
+            <Select
+              value={customSchedule ? '__custom__' : t.schedule || undefined}
+              onValueChange={(v) => {
+                if (v === '__custom__') {
+                  setCustomSchedule(true)
+                } else {
+                  setCustomSchedule(false)
+                  set({ schedule: v })
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Escolher horário" />
+              </SelectTrigger>
+              <SelectContent>
+                {SCHEDULE_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__custom__">Outro…</SelectItem>
+              </SelectContent>
+            </Select>
+            {customSchedule && (
+              <Input
+                className="mt-2"
+                value={t.schedule ?? ''}
+                onChange={(e) => set({ schedule: e.target.value })}
+                placeholder="Ex.: 08:00–16:00"
+              />
+            )}
+          </Field>
+        </div>
+      )}
+
       <Field label="Nome da equipa" info="Sugerido automaticamente a partir da máquina (ex.: E1 · IF4), mas podes mudar.">
         <Input value={t.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ex.: E1 · IF4" />
       </Field>
@@ -732,6 +811,19 @@ export function Structure({ db, onChange }: { db: Db; onChange: (db: Db) => void
                           <Badge variant="outline" className="gap-1">
                             <SectionDot id={t.sectionId} />
                             {machineName(db, t.machineId)}
+                          </Badge>
+                          <Badge
+                            variant={(t.regime || 'rot3') === 'fixo' ? 'secondary' : 'outline'}
+                            className="gap-1 font-normal"
+                          >
+                            {teamRegimeLabel(t)}
+                            <InfoTip
+                              text={
+                                (t.regime || 'rot3') === 'fixo'
+                                  ? 'Esta equipa trabalha sempre no mesmo turno e horário.'
+                                  : 'Turno rotativo: a equipa vai passando pelos turnos. A distribuição em baixo mostra quantas vezes esteve em cada um.'
+                              }
+                            />
                           </Badge>
                         </div>
                         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">

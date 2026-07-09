@@ -6,6 +6,7 @@ import type {
   PlaceKind,
   ProductionRecord,
   Section,
+  ShiftRegime,
   Team,
   WorkArea,
   Worker,
@@ -13,13 +14,37 @@ import type {
 
 const DB_KEY = 'rnc_impressao_v3'
 const ARCHIVE_KEY = 'rnc_impressao_v3_archives'
-const APP_DATA_REVISION = 7
+const APP_DATA_REVISION = 8
 
 export const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 export const SHIFTS = ['Manhã', 'Tarde', 'Noite'] as const
+
+// Horários predefinidos de cada turno (podem ser substituídos por "Outro").
+export const SHIFT_HOURS: Record<string, string> = {
+  'Manhã': '06:00–14:00',
+  'Tarde': '14:00–22:00',
+  'Noite': '22:00–06:00',
+}
+export const SCHEDULE_OPTIONS = ['06:00–14:00', '14:00–22:00', '22:00–06:00'] as const
+
+// Rótulos legíveis dos regimes de turno.
+export const REGIME_LABEL: Record<ShiftRegime, string> = {
+  rot3: 'Rotativo M/T/N',
+  rot2: 'Rotativo M/T',
+  fixo: 'Fixo',
+}
+/** Descrição completa do regime de uma equipa (ex.: "Fixo · Tarde · 14:00–22:00"). */
+export function teamRegimeLabel(t: Team): string {
+  const regime = t.regime || (t.shift ? 'fixo' : 'rot3')
+  if (regime !== 'fixo') return REGIME_LABEL[regime]
+  const parts = ['Fixo']
+  if (t.shift) parts.push(t.shift)
+  if (t.schedule) parts.push(t.schedule)
+  return parts.join(' · ')
+}
 
 // ---- utilitários numéricos / formatação ----
 export function uid(prefix: string): string {
@@ -93,11 +118,11 @@ function baseWorkAreas(): WorkArea[] {
 
 function baseTeams(): Team[] {
   return [
-    { id: 'E1-IF3', name: 'E1 · IF3', sectionId: 'flexo', machineId: 'IF3', shift: 'Manhã', members: ['trab-1904'] },
-    { id: 'E1-IF4', name: 'E1 · IF4', sectionId: 'flexo', machineId: 'IF4', shift: 'Tarde', members: ['trab-1940'] },
-    { id: 'E1-IR3', name: 'E1 · IR3', sectionId: 'roto', machineId: 'IR3', shift: 'Manhã', members: ['trab-1964'] },
-    { id: 'E2-IR3', name: 'E2 · IR3', sectionId: 'roto', machineId: 'IR3', shift: 'Noite', members: [] },
-    { id: 'E1-IR4', name: 'E1 · IR4', sectionId: 'roto', machineId: 'IR4', shift: 'Tarde', members: ['trab-2558'] },
+    { id: 'E1-IF3', name: 'E1 · IF3', sectionId: 'flexo', machineId: 'IF3', regime: 'rot3', shift: '', schedule: '', members: ['trab-1904'] },
+    { id: 'E1-IF4', name: 'E1 · IF4', sectionId: 'flexo', machineId: 'IF4', regime: 'rot3', shift: '', schedule: '', members: ['trab-1940'] },
+    { id: 'E1-IR3', name: 'E1 · IR3', sectionId: 'roto', machineId: 'IR3', regime: 'rot3', shift: '', schedule: '', members: ['trab-1964'] },
+    { id: 'E2-IR3', name: 'E2 · IR3', sectionId: 'roto', machineId: 'IR3', regime: 'rot2', shift: '', schedule: '', members: [] },
+    { id: 'E1-IR4', name: 'E1 · IR4', sectionId: 'roto', machineId: 'IR4', regime: 'fixo', shift: 'Tarde', schedule: '14:00–22:00', members: ['trab-2558'] },
   ]
 }
 
@@ -249,6 +274,15 @@ function migrateDb(db: Db): { db: Db; changed: boolean } {
   db.teams.forEach((t) => {
     if (t.shift === undefined) { t.shift = ''; changed = true }
     if (t.machineId === undefined) { t.machineId = ''; changed = true }
+    // Regime em falta: equipas antigas com turno passam a "fixo" com esse turno.
+    if (t.regime === undefined) {
+      t.regime = t.shift ? 'fixo' : 'rot3'
+      changed = true
+    }
+    if (t.schedule === undefined) {
+      t.schedule = t.regime === 'fixo' && t.shift ? (SHIFT_HOURS[t.shift] || '') : ''
+      changed = true
+    }
   })
   db.workers.forEach((w) => {
     if (w.shift === undefined) { w.shift = ''; changed = true }

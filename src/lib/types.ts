@@ -3,6 +3,12 @@
 export type Shift = 'Manhã' | 'Tarde' | 'Noite'
 export type MachineStatus = 'active' | 'discontinued'
 
+/** Regime de turno de uma equipa:
+ *  - 'rot3' → rotativo Manhã/Tarde/Noite
+ *  - 'rot2' → rotativo Manhã/Tarde
+ *  - 'fixo' → turno fixo (com turno e horário definidos) */
+export type ShiftRegime = 'rot3' | 'rot2' | 'fixo'
+
 /** Secção de impressão (Flexografia, Rotogravura, Offset). Produz OF e RNC. */
 export interface Section {
   id: string
@@ -58,7 +64,12 @@ export interface Team {
   name: string
   sectionId: string
   machineId: string
+  /** Turno fixo (Manhã/Tarde/Noite) — usado quando regime === 'fixo'. */
   shift: string
+  /** Regime de turno: rotativo M/T/N, rotativo M/T, ou fixo. */
+  regime?: ShiftRegime
+  /** Horário (ex.: '14:00–22:00') — usado quando regime === 'fixo'. */
+  schedule?: string
   members: string[]
 }
 
