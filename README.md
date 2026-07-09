@@ -51,6 +51,12 @@ A app foi **reconstruída de raiz** em React, mantendo o modelo de dados e os da
 - Gráfico de tendência mensal por máquina (OF ou RNC), com paleta de cores acessível (segura para daltonismo) e filtro por secção.
 - Um gráfico de evolução mês a mês por secção **e** por cada máquina: OF em barras, RNC em linha, variação percentual face ao mês anterior, e o total do período no canto do cartão. A máquina com melhor produção e a com pior RNC de cada secção ficam destacadas.
 
+#### Estrutura
+- Três separadores: **Máquinas e Áreas**, **Equipas** e **Trabalhadores** — ver, criar, editar e apagar.
+- **Máquinas e Áreas** — máquinas de impressão (Flexografia, Rotogravura e agora **Offset**), com etiqueta *Produção*, e **áreas de apoio** (Montagem de Cilindros, Montagem de Clichês, Limpeza) com etiqueta *Apoio*. As áreas não entram nos gráficos de OF/RNC; servem para o histórico de funções.
+- **Equipas** — cada equipa associada a uma máquina; os membros vêm da ficha de cada trabalhador. Mostra a **distribuição de turnos já cumpridos** (a partir dos registos de produção), assumindo turnos rotativos.
+- **Trabalhadores** — lista com total, função, equipa, idade calculada da data de nascimento e tempo a imprimir. Ao mudar de equipa ou função, o **histórico atualiza-se sozinho** (fecha a passagem anterior e abre a nova, com datas).
+
 #### Em toda a app
 - Menu lateral (drawer) com Dashboard, Produção, Estrutura, Fichas, Dados e Assistente IA.
 - Tema claro/escuro, guardado no dispositivo.
@@ -61,12 +67,11 @@ A app foi **reconstruída de raiz** em React, mantendo o modelo de dados e os da
 
 Por ordem prevista:
 
-1. **Estrutura** — gestão das bases da fábrica: secções, máquinas, equipas (associadas a uma máquina específica) e trabalhadores.
-2. **Fichas** — página dedicada por entidade (secção, máquina, equipa, trabalhador), com os dados agregados e o histórico de cada uma. A ficha do trabalhador é para estatística e análise, não para culpabilização individual.
-3. **Dados** — exportação/importação em JSON, arquivo automático de versões anteriores, e criação rápida de dados ("+ Novo": trabalhador, equipa, máquina, registo RNC rápido).
-4. **Assistente IA** — deixado para o fim de propósito. Chat local que responde apenas com base nos dados já registados (nunca inventa valores), tolerante a erros de escrita. Já existia na versão anterior ([`legacy/js/assistant.js`](./legacy/js/assistant.js)) e serve de referência para a reconstrução.
+1. **Fichas** — página dedicada por entidade (secção, máquina, equipa, trabalhador), com os dados agregados e o histórico de cada uma. A ficha do trabalhador é para estatística e análise, não para culpabilização individual. A Estrutura já guarda o histórico de funções e de equipas que a ficha vai mostrar.
+2. **Dados** — exportação/importação em JSON, arquivo automático de versões anteriores, e criação rápida de dados ("+ Novo": trabalhador, equipa, máquina, registo RNC rápido).
+3. **Assistente IA** — deixado para o fim de propósito. Chat local que responde apenas com base nos dados já registados (nunca inventa valores), tolerante a erros de escrita. Já existia na versão anterior ([`legacy/js/assistant.js`](./legacy/js/assistant.js)) e serve de referência para a reconstrução.
 
-Estes três primeiros ecrãs (Estrutura, Fichas, Dados) ainda mostram apenas um aviso "em construção" na app atual — é o que falta para deixar de depender só dos dados semeados e passar a registar produção nova pela interface.
+Estes dois ecrãs (Fichas, Dados) ainda mostram apenas um aviso "em construção" na app atual.
 
 ### Ideias mais a longo prazo
 
@@ -79,6 +84,7 @@ Sincronização opcional com Google Drive (backup/partilha manual entre disposit
   "app": "RNC Impressão",
   "version": 3,
   "sections": [],
+  "workAreas": [],
   "machines": [],
   "teams": [],
   "workers": [],

@@ -3,12 +3,17 @@ import type {
   Archive,
   Db,
   Machine,
+  PlaceKind,
   ProductionRecord,
+  Section,
+  Team,
+  WorkArea,
+  Worker,
 } from './types'
 
 const DB_KEY = 'rnc_impressao_v3'
 const ARCHIVE_KEY = 'rnc_impressao_v3_archives'
-const APP_DATA_REVISION = 6
+const APP_DATA_REVISION = 7
 
 export const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -69,6 +74,119 @@ const SEEDED_RECORDS: ProductionRecord[] = [
   { id: 'seed_2026_05_IR5', year: 2026, month: 5, sectionId: 'roto', machineId: 'IR5', teamId: '', shift: '', workerIds: [], jobs: 152, rnc: 2, cause: '', notes: 'Importado da fotografia de junho 2026' },
 ]
 
+// ---- bases da fábrica (secções, áreas, equipas, trabalhadores semeados) ----
+function baseSections(): Section[] {
+  return [
+    { id: 'flexo', name: 'Flexografia' },
+    { id: 'roto', name: 'Rotogravura' },
+    { id: 'offset', name: 'Offset' },
+  ]
+}
+
+function baseWorkAreas(): WorkArea[] {
+  return [
+    { id: 'mont_cilindros', name: 'Montagem de Cilindros', notes: '' },
+    { id: 'mont_cliches', name: 'Montagem de Clichês', notes: '' },
+    { id: 'limpeza', name: 'Limpeza', notes: '' },
+  ]
+}
+
+function baseTeams(): Team[] {
+  return [
+    { id: 'E1-IF3', name: 'E1 · IF3', sectionId: 'flexo', machineId: 'IF3', shift: 'Manhã', members: ['trab-1904'] },
+    { id: 'E1-IF4', name: 'E1 · IF4', sectionId: 'flexo', machineId: 'IF4', shift: 'Tarde', members: ['trab-1940'] },
+    { id: 'E1-IR3', name: 'E1 · IR3', sectionId: 'roto', machineId: 'IR3', shift: 'Manhã', members: ['trab-1964'] },
+    { id: 'E2-IR3', name: 'E2 · IR3', sectionId: 'roto', machineId: 'IR3', shift: 'Noite', members: [] },
+    { id: 'E1-IR4', name: 'E1 · IR4', sectionId: 'roto', machineId: 'IR4', shift: 'Tarde', members: ['trab-2558'] },
+  ]
+}
+
+function baseWorkers(): Worker[] {
+  return [
+    {
+      id: 'trab-2558', number: '2558', name: 'Saulo Ferreira', teamId: 'E1-IR4', shift: 'Tarde',
+      nationality: 'Portuguesa', birthDate: '1985-04-12', yearsCompany: 14,
+      role: 'Impressor', placeKind: 'machine', placeId: 'IR4',
+      roleHistory: [
+        { id: 'rh-2558-1', role: 'Impressor', placeKind: 'machine', placeId: 'IR3', start: '2012-03', end: '2018-06' },
+        { id: 'rh-2558-2', role: 'Impressor', placeKind: 'machine', placeId: 'IR4', start: '2018-06', end: '' },
+      ],
+      teamHistory: [
+        { id: 'th-2558-1', teamId: 'E1-IR3', start: '2012-03', end: '2015-01' },
+        { id: 'th-2558-2', teamId: 'E2-IR3', start: '2015-01', end: '2018-06' },
+        { id: 'th-2558-3', teamId: 'E1-IR4', start: '2018-06', end: '' },
+      ],
+      notes: '',
+    },
+    {
+      id: 'trab-1904', number: '1904', name: 'Fábio Ferreira', teamId: 'E1-IF3', shift: 'Manhã',
+      nationality: 'Portuguesa', birthDate: '1990-09-03', yearsCompany: 8,
+      role: 'Impressor', placeKind: 'machine', placeId: 'IF3',
+      roleHistory: [
+        { id: 'rh-1904-1', role: 'Ajudante de Impressão', placeKind: 'section', placeId: 'flexo', start: '2017-05', end: '2020-02' },
+        { id: 'rh-1904-2', role: 'Impressor', placeKind: 'machine', placeId: 'IF3', start: '2020-02', end: '' },
+      ],
+      teamHistory: [{ id: 'th-1904-1', teamId: 'E1-IF3', start: '2017-05', end: '' }],
+      notes: '',
+    },
+    {
+      id: 'trab-1964', number: '1964', name: 'João Silva', teamId: 'E1-IR3', shift: 'Manhã',
+      nationality: 'Portuguesa', birthDate: '1978-01-22', yearsCompany: 22,
+      role: 'Chefe de Equipa', placeKind: 'machine', placeId: 'IR3',
+      roleHistory: [
+        { id: 'rh-1964-1', role: 'Montador', placeKind: 'area', placeId: 'mont_cilindros', start: '2003-09', end: '2009-04' },
+        { id: 'rh-1964-2', role: 'Impressor', placeKind: 'machine', placeId: 'IR3', start: '2009-04', end: '2019-11' },
+        { id: 'rh-1964-3', role: 'Chefe de Equipa', placeKind: 'machine', placeId: 'IR3', start: '2019-11', end: '' },
+      ],
+      teamHistory: [{ id: 'th-1964-1', teamId: 'E1-IR3', start: '2009-04', end: '' }],
+      notes: '',
+    },
+    {
+      id: 'trab-1940', number: '1940', name: 'Tiago Carvalho', teamId: 'E1-IF4', shift: 'Tarde',
+      nationality: 'Brasileira', birthDate: '1994-11-30', yearsCompany: 5,
+      role: 'Impressor', placeKind: 'machine', placeId: 'IF4',
+      roleHistory: [
+        { id: 'rh-1940-1', role: 'Limpeza', placeKind: 'area', placeId: 'limpeza', start: '2020-07', end: '2021-10' },
+        { id: 'rh-1940-2', role: 'Ajudante de Impressão', placeKind: 'machine', placeId: 'IF4', start: '2021-10', end: '2023-05' },
+        { id: 'rh-1940-3', role: 'Impressor', placeKind: 'machine', placeId: 'IF4', start: '2023-05', end: '' },
+      ],
+      teamHistory: [{ id: 'th-1940-1', teamId: 'E1-IF4', start: '2021-10', end: '' }],
+      notes: '',
+    },
+    {
+      id: 'trab-2210', number: '2210', name: 'Ana Marques', teamId: '', shift: 'Noite',
+      nationality: 'Portuguesa', birthDate: '1996-06-15', yearsCompany: 3,
+      role: 'Montadora de Clichês', placeKind: 'area', placeId: 'mont_cliches',
+      roleHistory: [
+        { id: 'rh-2210-1', role: 'Montadora de Clichês', placeKind: 'area', placeId: 'mont_cliches', start: '2022-02', end: '' },
+      ],
+      teamHistory: [],
+      notes: '',
+    },
+  ]
+}
+
+// Associa equipas e turnos rotativos aos registos semeados, para o separador
+// de Equipas ter dados reais de "quantas vezes a equipa esteve em cada turno".
+// Só afeta dados de demonstração (as fotografias importadas fev–maio 2026).
+const SEED_TEAM_BY_MACHINE: Record<string, string[]> = {
+  IF3: ['E1-IF3'],
+  IF4: ['E1-IF4'],
+  IR3: ['E1-IR3', 'E2-IR3'],
+  IR4: ['E1-IR4'],
+}
+const SEED_SHIFT_ROT = ['Manhã', 'Tarde', 'Noite']
+function assignSeedTeamsAndShifts(records: ProductionRecord[]): boolean {
+  let changed = false
+  records.forEach((r) => {
+    const teams = SEED_TEAM_BY_MACHINE[r.machineId]
+    if (!teams) return
+    if (!r.teamId) { r.teamId = teams[r.month % teams.length]; changed = true }
+    if (!r.shift) { r.shift = SEED_SHIFT_ROT[r.month % 3]; changed = true }
+  })
+  return changed
+}
+
 function baseMachines(): Machine[] {
   return [
     { id: 'IF1', name: 'IF1', sectionId: 'flexo', manufacturer: '', year: '', colors: '', width: '', status: 'active', statusNote: '', notes: '' },
@@ -83,12 +201,14 @@ function baseMachines(): Machine[] {
 }
 
 function seedDb(): Db {
+  const records = clone(SEEDED_RECORDS)
+  assignSeedTeamsAndShifts(records)
   return {
     app: 'RNC Impressão', version: 3, dataRevision: APP_DATA_REVISION,
     updatedAt: new Date().toISOString(),
-    sections: [{ id: 'flexo', name: 'Flexografia' }, { id: 'roto', name: 'Rotogravura' }],
-    machines: baseMachines(), teams: [], workers: [],
-    productionRecords: clone(SEEDED_RECORDS),
+    sections: baseSections(), workAreas: baseWorkAreas(),
+    machines: baseMachines(), teams: baseTeams(), workers: baseWorkers(),
+    productionRecords: records,
     rncCauses: [], trainingRecords: [], archives: [],
   }
 }
@@ -101,10 +221,15 @@ function archiveSnapshot(reason: string, db: Db): void {
 
 function migrateDb(db: Db): { db: Db; changed: boolean } {
   let changed = false
-  db.sections = db.sections || [{ id: 'flexo', name: 'Flexografia' }, { id: 'roto', name: 'Rotogravura' }]
+  db.sections = db.sections && db.sections.length ? db.sections : baseSections()
+  // Garante a secção Offset em bases antigas (só tinham Flexo e Roto).
+  if (!db.sections.some((s) => s.id === 'offset')) {
+    db.sections.push({ id: 'offset', name: 'Offset' }); changed = true
+  }
+  if (!db.workAreas || !db.workAreas.length) { db.workAreas = baseWorkAreas(); changed = true }
   db.machines = db.machines && db.machines.length ? db.machines : baseMachines()
-  db.teams = db.teams || []
-  db.workers = db.workers || []
+  db.teams = db.teams && db.teams.length ? db.teams : baseTeams()
+  db.workers = db.workers && db.workers.length ? db.workers : baseWorkers()
   db.productionRecords = db.productionRecords || []
   db.rncCauses = db.rncCauses || []
   db.trainingRecords = db.trainingRecords || []
@@ -127,11 +252,24 @@ function migrateDb(db: Db): { db: Db; changed: boolean } {
   })
   db.workers.forEach((w) => {
     if (w.shift === undefined) { w.shift = ''; changed = true }
+    if (w.roleHistory === undefined) {
+      // Constrói um histórico mínimo a partir da função/local atual, se existirem.
+      w.roleHistory = w.role
+        ? [{ id: uid('rh'), role: w.role, placeKind: (w.placeKind || 'section'), placeId: w.placeId || '', start: '', end: '' }]
+        : []
+      changed = true
+    }
+    if (w.teamHistory === undefined) {
+      w.teamHistory = w.teamId ? [{ id: uid('th'), teamId: w.teamId, start: '', end: '' }] : []
+      changed = true
+    }
   })
   const ids = new Set(db.productionRecords.map((r) => r.id))
   SEEDED_RECORDS.forEach((r) => {
     if (!ids.has(r.id)) { db.productionRecords.push(clone(r)); changed = true }
   })
+  // Enriquece só os registos de demonstração com equipa + turno rotativo.
+  if (assignSeedTeamsAndShifts(db.productionRecords.filter((r) => r.id.startsWith('seed_')))) changed = true
   if ((db.dataRevision || 0) < APP_DATA_REVISION) { db.dataRevision = APP_DATA_REVISION; changed = true }
   return { db, changed }
 }
@@ -200,6 +338,104 @@ export function teamAutoName(db: Db, machineId: string): string {
   if (!machine) return ''
   const count = db.teams.filter((t) => t.machineId === machineId).length + 1
   return `E${count} · ${machine.name}`
+}
+export function workAreaName(db: Db, id: string): string {
+  return db.workAreas.find((x) => x.id === id)?.name || id
+}
+
+/** Nome legível de um local (secção de impressão, máquina ou área de apoio). */
+export function placeLabel(db: Db, kind: PlaceKind, id: string): string {
+  if (kind === 'machine') return machineName(db, id)
+  if (kind === 'area') return workAreaName(db, id)
+  return sectionName(db, id)
+}
+/** Um local é "de impressão" (conta para o tempo a imprimir) se for secção de impressão ou máquina. */
+export function placeIsPrinting(kind: PlaceKind): boolean {
+  return kind === 'section' || kind === 'machine'
+}
+
+// ---- datas / durações (meses no formato 'AAAA-MM') ----
+/** Meses entre dois 'AAAA-MM' (fim vazio = até hoje). Devolve 0 se início inválido. */
+export function monthsBetween(start?: string, end?: string): number {
+  const s = parseMonth(start)
+  if (s === null) return 0
+  const e = end ? parseMonth(end) : thisMonthIndex()
+  if (e === null) return 0
+  return Math.max(0, e - s)
+}
+function parseMonth(v?: string): number | null {
+  if (!v) return null
+  const m = /^(\d{4})-(\d{1,2})$/.exec(v)
+  if (!m) return null
+  return Number(m[1]) * 12 + (Number(m[2]) - 1)
+}
+function thisMonthIndex(): number {
+  const d = new Date()
+  return d.getFullYear() * 12 + d.getMonth()
+}
+/** Duração legível: "3 anos e 4 meses", "8 meses", "menos de 1 mês". */
+export function humanDuration(months: number): string {
+  if (months <= 0) return 'menos de 1 mês'
+  const y = Math.floor(months / 12)
+  const m = months % 12
+  const parts: string[] = []
+  if (y) parts.push(`${y} ${y === 1 ? 'ano' : 'anos'}`)
+  if (m) parts.push(`${m} ${m === 1 ? 'mês' : 'meses'}`)
+  return parts.join(' e ')
+}
+/** Idade em anos a partir de 'AAAA-MM-DD'; null se ausente/inválida. */
+export function ageFromBirth(birthDate?: string): number | null {
+  if (!birthDate) return null
+  const d = new Date(birthDate)
+  if (Number.isNaN(d.getTime())) return null
+  const now = new Date()
+  let age = now.getFullYear() - d.getFullYear()
+  const before = now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())
+  if (before) age--
+  return age >= 0 && age < 130 ? age : null
+}
+/** Tempo total a imprimir (em meses), somando as passagens por secções de impressão / máquinas. */
+export function printingMonths(w: Worker): number {
+  return (w.roleHistory || [])
+    .filter((r) => placeIsPrinting(r.placeKind))
+    .reduce((a, r) => a + monthsBetween(r.start, r.end), 0)
+}
+/** Tempo na equipa atual (em meses), a partir da entrada em aberto do histórico. */
+export function currentTeamMonths(w: Worker): number {
+  const open = (w.teamHistory || []).find((t) => !t.end)
+  return open ? monthsBetween(open.start, open.end) : 0
+}
+/** Mês atual em 'AAAA-MM'. */
+export function currentMonthStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+/** Ao gravar, fecha a passagem anterior e abre uma nova sempre que muda de equipa ou de função/local.
+ *  É isto que mantém o histórico do trabalhador atualizado sem o utilizador o escrever à mão. */
+export function reconcileWorkerHistory(prev: Worker | undefined, next: Worker): Worker {
+  const now = currentMonthStr()
+  const w = clone(next)
+  w.roleHistory = w.roleHistory || []
+  w.teamHistory = w.teamHistory || []
+
+  if ((w.teamId || '') !== (prev?.teamId || '')) {
+    const open = w.teamHistory.find((t) => !t.end)
+    if (open) open.end = now
+    if (w.teamId) w.teamHistory.push({ id: uid('th'), teamId: w.teamId, start: now, end: '' })
+  }
+
+  const roleChanged =
+    (prev?.role || '') !== (w.role || '') ||
+    (prev?.placeKind || '') !== (w.placeKind || '') ||
+    (prev?.placeId || '') !== (w.placeId || '')
+  if (roleChanged) {
+    const open = w.roleHistory.find((r) => !r.end)
+    if (open) open.end = now
+    if (w.role) {
+      w.roleHistory.push({ id: uid('rh'), role: w.role, placeKind: w.placeKind || 'section', placeId: w.placeId || '', start: now, end: '' })
+    }
+  }
+  return w
 }
 
 // ---- filtros e agregações ----

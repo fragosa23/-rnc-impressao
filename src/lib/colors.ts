@@ -4,6 +4,7 @@ import type { Db } from './types'
 export const SECTION_COLORS: Record<string, string> = {
   flexo: 'oklch(0.55 0.18 264)', // azul
   roto: 'oklch(0.58 0.19 300)', // violeta
+  offset: 'oklch(0.62 0.15 200)', // ciano/turquesa
 }
 
 export function sectionColor(sectionId: string): string {
