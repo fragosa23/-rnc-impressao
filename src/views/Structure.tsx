@@ -44,8 +44,12 @@ import type {
 } from '@/lib/types'
 import {
   ageFromBirth,
+  areaFieldSpecs,
   currentTeamMonths,
+  diffFields,
   humanDuration,
+  logChange,
+  machineFieldSpecs,
   machineName,
   placeLabel,
   printingMonths,
@@ -56,9 +60,11 @@ import {
   SHIFT_HOURS,
   SHIFTS,
   teamAutoName,
+  teamFieldSpecs,
   teamName,
   teamRegimeLabel,
   uid,
+  workerFieldSpecs,
   workerLabel,
 } from '@/lib/db'
 import { SECTION_COLORS, sectionColor } from '@/lib/colors'
@@ -922,6 +928,7 @@ export function Structure({
                                 d.workers.forEach((wk) => {
                                   if (wk.teamId === t.id) wk.teamId = ''
                                 })
+                                logChange(d, { entity: 'team', entityId: t.id, entityLabel: t.name, action: 'delete' })
                               }),
                           })
                         }
@@ -1073,6 +1080,9 @@ export function Structure({
                                 d.teams.forEach((tm) => {
                                   tm.members = (tm.members || []).filter((id) => id !== wk.id)
                                 })
+                                logChange(d, {
+                                  entity: 'worker', entityId: wk.id, entityLabel: workerLabel(wk), action: 'delete',
+                                })
                               }),
                           })
                         }
@@ -1188,7 +1198,11 @@ export function Structure({
                             title: `Apagar a máquina ${m.name}?`,
                             description:
                               'Os registos de produção desta máquina não são apagados — só a ficha da máquina.',
-                            action: () => mutate((d) => { d.machines = d.machines.filter((x) => x.id !== m.id) }),
+                            action: () =>
+                              mutate((d) => {
+                                d.machines = d.machines.filter((x) => x.id !== m.id)
+                                logChange(d, { entity: 'machine', entityId: m.id, entityLabel: m.name, action: 'delete' })
+                              }),
                           })
                         }}
                       >
@@ -1278,7 +1292,11 @@ export function Structure({
                         setPendingDelete({
                           title: `Apagar a área ${a.name}?`,
                           description: 'O histórico de funções dos trabalhadores que lá passaram mantém-se.',
-                          action: () => mutate((d) => { d.workAreas = d.workAreas.filter((x) => x.id !== a.id) }),
+                          action: () =>
+                            mutate((d) => {
+                              d.workAreas = d.workAreas.filter((x) => x.id !== a.id)
+                              logChange(d, { entity: 'area', entityId: a.id, entityLabel: a.name, action: 'delete' })
+                            }),
                         })
                       }}
                     >
@@ -1300,10 +1318,22 @@ export function Structure({
               initial={editing.value}
               onCancel={close}
               onSave={(m) => {
+                const prev = editing.value
                 mutate((d) => {
                   const i = d.machines.findIndex((x) => x.id === m.id)
                   if (i >= 0) d.machines[i] = m
                   else d.machines.push(m)
+                  const changes = diffFields(
+                    prev as unknown as Record<string, unknown> | null,
+                    m as unknown as Record<string, unknown>,
+                    machineFieldSpecs(d),
+                  )
+                  if (!prev || changes.length) {
+                    logChange(d, {
+                      entity: 'machine', entityId: m.id, entityLabel: m.name,
+                      action: prev ? 'edit' : 'create', changes: prev ? changes : undefined,
+                    })
+                  }
                 })
                 close()
               }}
@@ -1314,10 +1344,22 @@ export function Structure({
               initial={editing.value}
               onCancel={close}
               onSave={(a) => {
+                const prev = editing.value
                 mutate((d) => {
                   const i = d.workAreas.findIndex((x) => x.id === a.id)
                   if (i >= 0) d.workAreas[i] = a
                   else d.workAreas.push(a)
+                  const changes = diffFields(
+                    prev as unknown as Record<string, unknown> | null,
+                    a as unknown as Record<string, unknown>,
+                    areaFieldSpecs(),
+                  )
+                  if (!prev || changes.length) {
+                    logChange(d, {
+                      entity: 'area', entityId: a.id, entityLabel: a.name,
+                      action: prev ? 'edit' : 'create', changes: prev ? changes : undefined,
+                    })
+                  }
                 })
                 close()
               }}
@@ -1329,10 +1371,22 @@ export function Structure({
               initial={editing.value}
               onCancel={close}
               onSave={(t) => {
+                const prev = editing.value
                 mutate((d) => {
                   const i = d.teams.findIndex((x) => x.id === t.id)
                   if (i >= 0) d.teams[i] = t
                   else d.teams.push(t)
+                  const changes = diffFields(
+                    prev as unknown as Record<string, unknown> | null,
+                    t as unknown as Record<string, unknown>,
+                    teamFieldSpecs(d),
+                  )
+                  if (!prev || changes.length) {
+                    logChange(d, {
+                      entity: 'team', entityId: t.id, entityLabel: t.name,
+                      action: prev ? 'edit' : 'create', changes: prev ? changes : undefined,
+                    })
+                  }
                 })
                 close()
               }}
@@ -1344,10 +1398,22 @@ export function Structure({
               initial={editing.value}
               onCancel={close}
               onSave={(w) => {
+                const prev = editing.value
                 mutate((d) => {
                   const i = d.workers.findIndex((x) => x.id === w.id)
                   if (i >= 0) d.workers[i] = w
                   else d.workers.push(w)
+                  const changes = diffFields(
+                    prev as unknown as Record<string, unknown> | null,
+                    w as unknown as Record<string, unknown>,
+                    workerFieldSpecs(d),
+                  )
+                  if (!prev || changes.length) {
+                    logChange(d, {
+                      entity: 'worker', entityId: w.id, entityLabel: workerLabel(w),
+                      action: prev ? 'edit' : 'create', changes: prev ? changes : undefined,
+                    })
+                  }
                 })
                 close()
               }}

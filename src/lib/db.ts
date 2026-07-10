@@ -1,7 +1,9 @@
 import type {
   Aggregate,
   Archive,
+  ChangeEntry,
   Db,
+  FieldChange,
   Machine,
   PlaceKind,
   ProductionRecord,
@@ -14,7 +16,7 @@ import type {
 
 const DB_KEY = 'rnc_impressao_v3'
 const ARCHIVE_KEY = 'rnc_impressao_v3_archives'
-const APP_DATA_REVISION = 9
+const APP_DATA_REVISION = 10
 
 export const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -217,6 +219,7 @@ function seedDb(): Db {
     productionRecords: clone(SEEDED_RECORDS),
     rncCauses: [], trainingRecords: [], archives: [],
     settings: defaultSettings(),
+    changeLog: [],
   }
 }
 
@@ -291,6 +294,7 @@ function migrateDb(db: Db): { db: Db; changed: boolean } {
       r.teamId = ''; r.shift = ''; changed = true
     }
   })
+  if (!db.changeLog) { db.changeLog = []; changed = true }
   // Definições da app (meta da taxa, horários disponíveis).
   if (!db.settings) { db.settings = defaultSettings(); changed = true }
   if (!db.settings.schedules || !db.settings.schedules.length) { db.settings.schedules = [...SCHEDULE_OPTIONS]; changed = true }
@@ -491,6 +495,104 @@ export function recordShift(db: Db, r: ProductionRecord): string {
   if (r.shift) return r.shift
   const t = db.teams.find((x) => x.id === r.teamId)
   return t?.shift || 'Não definido'
+}
+
+// ---- registo de alterações (auditoria simples) ----
+/** Acrescenta uma entrada ao histórico de alterações (mais recente primeiro, máx. 500). */
+export function logChange(db: Db, entry: Omit<ChangeEntry, 'id' | 'at'>): void {
+  db.changeLog = db.changeLog || []
+  db.changeLog.unshift({ id: uid('chg'), at: new Date().toISOString(), ...entry })
+  if (db.changeLog.length > 500) db.changeLog.length = 500
+}
+
+export interface FieldSpec {
+  key: string
+  label: string
+  fmt?: (v: unknown) => string
+}
+
+/** Compara dois objetos campo a campo e devolve as mudanças em linguagem legível. */
+export function diffFields(
+  prev: Record<string, unknown> | undefined | null,
+  next: Record<string, unknown>,
+  specs: FieldSpec[],
+): FieldChange[] {
+  if (!prev) return []
+  const out: FieldChange[] = []
+  const show = (spec: FieldSpec, v: unknown): string => {
+    const s = spec.fmt ? spec.fmt(v) : String(v ?? '')
+    return s === '' || s === 'undefined' || s === 'null' ? '—' : s
+  }
+  specs.forEach((spec) => {
+    const a = show(spec, prev[spec.key])
+    const b = show(spec, next[spec.key])
+    if (a !== b) out.push({ field: spec.label, from: a, to: b })
+  })
+  return out
+}
+
+export function machineFieldSpecs(db: Db): FieldSpec[] {
+  return [
+    { key: 'name', label: 'Nome' },
+    { key: 'sectionId', label: 'Tipo de impressão', fmt: (v) => sectionName(db, String(v ?? '')) },
+    { key: 'status', label: 'Estado', fmt: (v) => (v === 'discontinued' ? 'Descontinuada' : 'Ativa') },
+    { key: 'statusNote', label: 'Nota do estado' },
+    { key: 'manufacturer', label: 'Fabricante' },
+    { key: 'year', label: 'Ano' },
+    { key: 'colors', label: 'Nº de cores' },
+    { key: 'width', label: 'Largura' },
+    { key: 'notes', label: 'Notas' },
+  ]
+}
+
+export function teamFieldSpecs(db: Db): FieldSpec[] {
+  return [
+    { key: 'name', label: 'Nome' },
+    { key: 'machineId', label: 'Máquina', fmt: (v) => machineName(db, String(v ?? '')) },
+    { key: 'regime', label: 'Regime de turno', fmt: (v) => REGIME_LABEL[(v as ShiftRegime) || 'rot3'] },
+    { key: 'shift', label: 'Turno fixo' },
+    { key: 'schedule', label: 'Horário' },
+  ]
+}
+
+export function workerFieldSpecs(db: Db): FieldSpec[] {
+  return [
+    { key: 'number', label: 'Nº mecanográfico' },
+    { key: 'name', label: 'Nome' },
+    { key: 'teamId', label: 'Equipa', fmt: (v) => (v ? teamName(db, String(v)) : '—') },
+    { key: 'shift', label: 'Turno' },
+    { key: 'nationality', label: 'Nacionalidade' },
+    { key: 'birthDate', label: 'Data de nascimento' },
+    { key: 'yearsCompany', label: 'Anos na empresa' },
+    { key: 'role', label: 'Função' },
+    { key: 'placeId', label: 'Local', fmt: (v) => String(v ?? '') },
+    { key: 'notes', label: 'Notas' },
+  ]
+}
+
+export function areaFieldSpecs(): FieldSpec[] {
+  return [
+    { key: 'name', label: 'Nome' },
+    { key: 'notes', label: 'Notas' },
+  ]
+}
+
+export function recordFieldSpecs(): FieldSpec[] {
+  return [
+    { key: 'jobs', label: 'OF' },
+    { key: 'rnc', label: 'RNC' },
+    { key: 'cause', label: 'Causa' },
+    { key: 'notes', label: 'Observações' },
+  ]
+}
+
+/** Data/hora legível para o histórico (ex.: "09/07/2026 14:32"). */
+export function fmtDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString('pt-PT', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
 }
 
 // ---- arquivos ----

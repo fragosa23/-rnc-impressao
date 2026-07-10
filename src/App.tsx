@@ -6,6 +6,7 @@ import { Production } from '@/views/Production'
 import { Structure } from '@/views/Structure'
 import { Profiles, type ProfileTarget } from '@/views/Profiles'
 import { Settings } from '@/views/Settings'
+import { Data } from '@/views/Data'
 import { loadDb, saveDb } from '@/lib/db'
 import { loadPrefs, savePrefs } from '@/lib/prefs'
 import type { Db } from '@/lib/types'
@@ -66,7 +67,14 @@ function App() {
             assistantOn={assistantOn}
           />
         )}
-        {view === 'data' && <Placeholder label="Dados" />}
+        {view === 'data' && (
+          <Data
+            db={db}
+            onChange={updateDb}
+            onReload={() => setDb(loadDb())}
+            goStructure={() => setView('structure')}
+          />
+        )}
         {view === 'ai' && <Placeholder label="Assistente IA" />}
         {view === 'settings' && (
           <Settings db={db} onChange={updateDb} assistantOn={assistantOn} onAssistantChange={setAssistant} />

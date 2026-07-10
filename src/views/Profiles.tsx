@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InfoTip } from '@/components/InfoTip'
 import { ChartReview } from '@/components/ChartReview'
+import { ChangeLogList } from '@/components/ChangeLogList'
 import type { Db, Machine, Team, Worker } from '@/lib/types'
 import {
   ageFromBirth,
@@ -69,6 +70,24 @@ function Fact({ label, value, info }: { label: string; value: string; info?: str
       </div>
       <div className="mt-0.5 text-sm font-medium">{value}</div>
     </div>
+  )
+}
+
+/** Histórico de alterações desta ficha (criação, edições e o que mudou). */
+function EntityHistory({ db, entityId }: { db: Db; entityId: string }) {
+  const entries = (db.changeLog ?? []).filter((e) => e.entityId === entityId)
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-1.5 text-base">
+          Histórico de alterações
+          <InfoTip text="Quando esta ficha foi criada e cada edição feita, com os campos que mudaram (de → para). O histórico completo de toda a app está no menu Dados." />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ChangeLogList entries={entries} limit={10} showEntity={false} />
+      </CardContent>
+    </Card>
   )
 }
 
@@ -301,6 +320,7 @@ function WorkerProfile({
         </Card>
       )}
 
+      <EntityHistory db={db} entityId={worker.id} />
       <NoProductionNote kind="trabalhador" />
     </div>
   )
@@ -386,6 +406,7 @@ function TeamProfile({
         </CardContent>
       </Card>
 
+      <EntityHistory db={db} entityId={team.id} />
       <NoProductionNote kind="equipa" />
     </div>
   )
@@ -600,6 +621,8 @@ function MachineProfile({
           </CardContent>
         </Card>
       )}
+
+      <EntityHistory db={db} entityId={machine.id} />
     </div>
   )
 }

@@ -125,6 +125,8 @@ export interface Db {
   rncCauses: unknown[]
   trainingRecords: unknown[]
   archives: Archive[]
+  /** Histórico de criações/edições/eliminações (mais recente primeiro, máx. 500). */
+  changeLog?: ChangeEntry[]
   /** Definições da app (viajam com a exportação/importação dos dados). */
   settings?: {
     /** Horários disponíveis para turnos fixos (geríveis em Configurações). */
@@ -139,6 +141,29 @@ export interface Archive {
   createdAt: string
   reason: string
   db: Db
+}
+
+// ---- Registo de alterações (auditoria simples) ----
+export type ChangeAction = 'create' | 'edit' | 'delete' | 'import' | 'restore'
+
+export interface FieldChange {
+  /** Nome legível do campo (ex.: "Equipa"). */
+  field: string
+  from: string
+  to: string
+}
+
+/** Uma entrada no histórico: quem/o quê foi criado, editado ou apagado, e que campos mudaram. */
+export interface ChangeEntry {
+  id: string
+  /** Data/hora ISO. */
+  at: string
+  entity: 'machine' | 'team' | 'worker' | 'area' | 'record' | 'data'
+  entityId: string
+  /** Nome legível da entidade no momento da alteração (ex.: "IF3", "2558 - Saulo Ferreira"). */
+  entityLabel: string
+  action: ChangeAction
+  changes?: FieldChange[]
 }
 
 /** Resultado agregado de um conjunto de registos. */

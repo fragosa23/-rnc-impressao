@@ -52,6 +52,12 @@ A app foi **reconstruída de raiz** em React, mantendo o modelo de dados e os da
 - Baseado **apenas nos dados registados** (regras locais) — nunca inventa valores.
 - A cruz do balão só o recolhe; **desligar de vez faz-se em Configurações**. Em ecrãs pequenos começa recolhido para não tapar conteúdo.
 
+#### Dados
+- **Lançar relatório mensal** — o papel que costumam fornecer, em digital: escolhe o mês, preenche OF e RNC por máquina numa grelha (pré-preenchida se o mês já tiver valores) e guarda tudo de uma vez.
+- **Registos de produção** — lista por mês, com editar/apagar registo a registo e "+ Novo registo" individual (máquina, mês, OF, RNC, causa, observações).
+- **Cópia de segurança** — exportar/importar JSON e restaurar **arquivos automáticos** (a app guarda a versão anterior antes de cada alteração ou importação).
+- **Histórico de alterações** — tudo o que foi criado, editado ou apagado, com os campos que mudaram (de → para). Cada ficha (máquina, equipa, trabalhador) mostra também o seu próprio historial.
+
 #### Configurações
 - Ligar/desligar o assistente ObaniA (preferência do dispositivo).
 - **Meta da taxa de RNC** (viaja com a exportação de dados).
@@ -88,11 +94,8 @@ A app foi **reconstruída de raiz** em React, mantendo o modelo de dados e os da
 
 Por ordem prevista:
 
-1. **Dados** — exportação/importação em JSON, arquivo automático de versões anteriores, e criação rápida de dados ("+ Novo": trabalhador, equipa, máquina, registo RNC rápido).
-2. **Assistente IA (chat)** — o ecrã de conversa: perguntar coisas aos dados por escrito. O balão ObaniA do Dashboard é a face proativa do mesmo cérebro; o chat será a face reativa. Referência: [`legacy/js/assistant.js`](./legacy/js/assistant.js).
-3. **Análises seguintes** — comparação de períodos lado a lado, análise de causas de RNC (Pareto — precisa de as causas passarem a ser registadas), desempenho por turno, relatório mensal imprimível. Mais além: paragens/OEE, manutenção, desperdício, formação.
-
-O ecrã **Dados** ainda mostra um aviso "em construção" na app atual.
+1. **Assistente IA (chat)** — o ecrã de conversa: perguntar coisas aos dados por escrito. O balão ObaniA do Dashboard é a face proativa do mesmo cérebro; o chat será a face reativa. Referência: [`legacy/js/assistant.js`](./legacy/js/assistant.js).
+2. **Análises seguintes** — comparação de períodos lado a lado, análise de causas de RNC (Pareto — as causas já se registam no ecrã Dados), desempenho por turno, relatório mensal imprimível. Mais além: paragens/OEE, manutenção, desperdício, formação.
 
 ### Ideias mais a longo prazo
 
