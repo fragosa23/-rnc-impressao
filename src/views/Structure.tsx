@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { InfoTip } from '@/components/InfoTip'
-import type { ProfileTarget } from '@/views/Profiles'
+import { ProfileDetail, type ProfileTarget } from '@/views/Profiles'
 import type { EditTarget } from '@/views/Data'
 import type { Db, Machine, WorkArea } from '@/lib/types'
 import {
@@ -131,12 +131,19 @@ function AreaSprite({ area, onClick }: { area: WorkArea; onClick: () => void }) 
 
 export function Structure({
   db,
+  sel,
   onOpenProfile,
   onOpenEditor,
+  onGoProduction,
+  assistantOn,
 }: {
   db: Db
+  /** Ficha aberta (máquina/equipa/trabalhador) ou null = lista. */
+  sel: ProfileTarget
   onOpenProfile: (t: ProfileTarget) => void
   onOpenEditor: (t: EditTarget) => void
+  onGoProduction: () => void
+  assistantOn: boolean
 }) {
   // Unidade "focada" no mapa (zoom sobre uma máquina ou área).
   const [focus, setFocus] = useState<{ kind: 'machine' | 'area'; id: string } | null>(null)
@@ -153,6 +160,20 @@ export function Structure({
       return w.name.toLowerCase().includes(q) || (w.number || '').toLowerCase().includes(q)
     })
   }, [db.workers, workerQuery, workerTeamFilter])
+
+  // Se há uma ficha aberta, mostra o detalhe em vez da lista.
+  if (sel) {
+    return (
+      <ProfileDetail
+        db={db}
+        sel={sel}
+        onSelChange={(t) => onOpenProfile(t)}
+        onGoProduction={onGoProduction}
+        onEdit={(t) => onOpenEditor({ kind: t.kind, id: t.id })}
+        assistantOn={assistantOn}
+      />
+    )
+  }
 
   return (
     <div className="space-y-5">

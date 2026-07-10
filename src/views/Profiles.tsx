@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUpRight, Boxes, ChevronRight, Factory, IdCard, Info, Pencil } from 'lucide-react'
+import { ArrowUpRight, Boxes, ChevronRight, Factory, Info, Pencil } from 'lucide-react'
 import {
   Bar,
   CartesianGrid,
@@ -15,7 +15,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InfoTip } from '@/components/InfoTip'
 import { ChartReview } from '@/components/ChartReview'
 import { ChangeLogList } from '@/components/ChangeLogList'
@@ -125,13 +124,11 @@ function NoProductionNote({ kind }: { kind: 'trabalhador' | 'equipa' }) {
 function WorkerProfile({
   db,
   worker,
-  onBack,
   onOpen,
   onEdit,
 }: {
   db: Db
   worker: Worker
-  onBack: () => void
   onOpen: (t: ProfileTarget) => void
   onEdit: () => void
 }) {
@@ -147,9 +144,7 @@ function WorkerProfile({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="size-4" /> Voltar
-        </Button>
+        <span className="text-sm text-muted-foreground">Ficha do trabalhador</span>
         <EditInData onClick={onEdit} label={`Editar ${workerLabel(worker)} no menu Dados`} />
       </div>
 
@@ -348,13 +343,11 @@ function WorkerProfile({
 function TeamProfile({
   db,
   team,
-  onBack,
   onOpen,
   onEdit,
 }: {
   db: Db
   team: Team
-  onBack: () => void
   onOpen: (t: ProfileTarget) => void
   onEdit: () => void
 }) {
@@ -363,9 +356,7 @@ function TeamProfile({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="size-4" /> Voltar
-        </Button>
+        <span className="text-sm text-muted-foreground">Ficha da equipa</span>
         <EditInData onClick={onEdit} label={`Editar a equipa ${team.name} no menu Dados`} />
       </div>
 
@@ -439,7 +430,6 @@ function TeamProfile({
 function MachineProfile({
   db,
   machine,
-  onBack,
   onOpen,
   onGoProduction,
   onEdit,
@@ -447,7 +437,6 @@ function MachineProfile({
 }: {
   db: Db
   machine: Machine
-  onBack: () => void
   onOpen: (t: ProfileTarget) => void
   onGoProduction: () => void
   onEdit: () => void
@@ -479,9 +468,7 @@ function MachineProfile({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="size-4" /> Voltar
-        </Button>
+        <span className="text-sm text-muted-foreground">Ficha da máquina</span>
         <EditInData onClick={onEdit} label={`Editar a máquina ${machine.name} no menu Dados`} />
       </div>
 
@@ -656,7 +643,9 @@ function MachineProfile({
 // Ecrã principal das Fichas
 // ---------------------------------------------------------------------------
 
-export function Profiles({
+/** Renderiza a ficha (detalhe) de uma máquina, equipa ou trabalhador.
+ *  Devolve null se o alvo não existir. A lista vive na Estrutura. */
+export function ProfileDetail({
   db,
   sel,
   onSelChange,
@@ -668,7 +657,6 @@ export function Profiles({
   sel: ProfileTarget
   onSelChange: (t: ProfileTarget) => void
   onGoProduction: () => void
-  /** Abre a edição desta entidade no menu Dados (toda a edição acontece lá). */
   onEdit: (t: { kind: 'machine' | 'team' | 'worker'; id: string }) => void
   assistantOn: boolean
 }) {
@@ -679,7 +667,6 @@ export function Profiles({
         <WorkerProfile
           db={db}
           worker={worker}
-          onBack={() => onSelChange(null)}
           onOpen={onSelChange}
           onEdit={() => onEdit({ kind: 'worker', id: worker.id })}
         />
@@ -693,7 +680,6 @@ export function Profiles({
         <TeamProfile
           db={db}
           team={team}
-          onBack={() => onSelChange(null)}
           onOpen={onSelChange}
           onEdit={() => onEdit({ kind: 'team', id: team.id })}
         />
@@ -707,7 +693,6 @@ export function Profiles({
         <MachineProfile
           db={db}
           machine={machine}
-          onBack={() => onSelChange(null)}
           onOpen={onSelChange}
           onGoProduction={onGoProduction}
           onEdit={() => onEdit({ kind: 'machine', id: machine.id })}
@@ -716,107 +701,5 @@ export function Profiles({
       )
     }
   }
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Fichas</h1>
-        <p className="text-sm text-muted-foreground">
-          A página de cada máquina, trabalhador e equipa: o que é, quem lá trabalha, por onde passou.
-          Para estatística e análise — não para culpabilização.
-        </p>
-      </div>
-
-      <Tabs defaultValue="machines">
-        <TabsList className="w-full">
-          <TabsTrigger value="machines">
-            <Factory className="size-4" /> Máquinas
-          </TabsTrigger>
-          <TabsTrigger value="workers">
-            <IdCard className="size-4" /> Trabalhadores
-          </TabsTrigger>
-          <TabsTrigger value="teams">
-            <Boxes className="size-4" /> Equipas
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="machines">
-          <Card>
-            <CardContent className="space-y-1.5 pt-0">
-              {db.machines.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => onSelChange({ kind: 'machine', id: m.id })}
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: sectionColor(m.sectionId) }} />
-                    <span className="text-sm font-medium">{m.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {sectionName(db, m.sectionId)}
-                      {m.status === 'discontinued' && ' · descontinuada'}
-                    </span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="workers">
-          <Card>
-            <CardContent className="space-y-1.5 pt-0">
-              {db.workers.length === 0 && (
-                <p className="text-sm text-muted-foreground">Ainda não há trabalhadores registados.</p>
-              )}
-              {db.workers.map((w) => (
-                <button
-                  key={w.id}
-                  type="button"
-                  onClick={() => onSelChange({ kind: 'worker', id: w.id })}
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="min-w-0">
-                    <span className="text-sm font-medium">{workerLabel(w)}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {[w.role, teamName(db, w.teamId)].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="teams">
-          <Card>
-            <CardContent className="space-y-1.5 pt-0">
-              {db.teams.length === 0 && (
-                <p className="text-sm text-muted-foreground">Ainda não há equipas registadas.</p>
-              )}
-              {db.teams.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => onSelChange({ kind: 'team', id: t.id })}
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="min-w-0">
-                    <span className="text-sm font-medium">{t.name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {machineName(db, t.machineId)} · {teamRegimeLabel(t)}
-                    </span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+  return null
 }

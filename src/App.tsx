@@ -4,9 +4,9 @@ import { AppShell, type ViewId } from '@/components/AppShell'
 import { Dashboard } from '@/views/Dashboard'
 import { Production } from '@/views/Production'
 import { Structure } from '@/views/Structure'
-import { Profiles, type ProfileTarget } from '@/views/Profiles'
+import { type ProfileTarget } from '@/views/Profiles'
 import { Settings } from '@/views/Settings'
-import { Data, type EditTarget } from '@/views/Data'
+import { Data, type DataSection, type EditTarget } from '@/views/Data'
 import { loadDb, saveDb } from '@/lib/db'
 import { loadPrefs, savePrefs } from '@/lib/prefs'
 import type { Db } from '@/lib/types'
@@ -22,24 +22,22 @@ function Placeholder({ label }: { label: string }) {
   )
 }
 
-/** Um passo de navegação (para o botão Voltar percorrer o caminho todo para trás). */
-interface NavState {
+/** Um sítio na app (para o botão Voltar percorrer o caminho todo para trás). */
+interface Loc {
   view: ViewId
   profile: ProfileTarget
+  dataSection: DataSection | null
 }
 
 function App() {
-  const [view, setView] = useState<ViewId>('dashboard')
   const [db, setDb] = useState<Db>(loadDb)
   const [assistantOn, setAssistantOn] = useState(() => loadPrefs().assistantEnabled)
-  // Alvo aberto nas Fichas — vive aqui para o resto da app poder "saltar" para uma ficha.
-  const [profileSel, setProfileSel] = useState<ProfileTarget>(null)
+  // Localização atual + histórico de navegação (para o Voltar).
+  const [loc, setLoc] = useState<Loc>({ view: 'dashboard', profile: null, dataSection: null })
+  const [history, setHistory] = useState<Loc[]>([])
   // Pedido de edição pendente para o ecrã Dados (vindo do botão "Editar" de uma ficha).
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
-  // Histórico de navegação: cada salto empilha o sítio onde estávamos.
-  const [history, setHistory] = useState<NavState[]>([])
 
-  // Grava no localStorage (com arquivo automático) e atualiza o ecrã.
   const updateDb = useCallback((next: Db) => {
     saveDb(next)
     setDb({ ...next })
@@ -51,66 +49,70 @@ function App() {
   }, [])
 
   // Navegar guardando o sítio atual no histórico (máx. 30 passos).
-  const go = useCallback(
-    (v: ViewId, profile: ProfileTarget = null) => {
-      setHistory((h) => [...h.slice(-29), { view, profile: profileSel }])
-      setView(v)
-      setProfileSel(profile)
-    },
-    [view, profileSel],
-  )
+  const navTo = useCallback((next: Loc) => {
+    setHistory((h) => [...h.slice(-29), loc])
+    setLoc(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc])
 
   const goBack = useCallback(() => {
     setHistory((h) => {
       const prev = h[h.length - 1]
       if (!prev) return h
-      setView(prev.view)
-      setProfileSel(prev.profile)
+      setLoc(prev)
       return h.slice(0, -1)
     })
   }, [])
 
-  // Abrir a ficha de uma máquina/equipa/trabalhador vindo de qualquer ecrã.
-  const openProfile = useCallback((target: ProfileTarget) => go('profiles', target), [go])
-
-  // Abrir a edição de uma entidade no ecrã Dados (toda a edição acontece lá).
+  // Ir para um ecrã do menu (raiz, sem ficha/secção aberta).
+  const goView = useCallback((view: ViewId) => navTo({ view, profile: null, dataSection: null }), [navTo])
+  // Abrir a ficha de uma máquina/equipa/trabalhador (dentro da Estrutura).
+  const openProfile = useCallback(
+    (target: ProfileTarget) => navTo({ view: 'structure', profile: target, dataSection: null }),
+    [navTo],
+  )
+  // Abrir uma sub-secção do menu Dados.
+  const openDataSection = useCallback(
+    (s: DataSection) => navTo({ view: 'data', profile: null, dataSection: s }),
+    [navTo],
+  )
+  // Abrir a edição de uma entidade/registo no menu Dados (na secção certa).
   const openEditor = useCallback(
     (target: EditTarget) => {
       setEditTarget(target)
-      go('data')
+      navTo({ view: 'data', profile: null, dataSection: target.kind === 'record' ? 'records' : 'fichas' })
     },
-    [go],
+    [navTo],
   )
 
   return (
     <TooltipProvider delayDuration={150}>
-      <AppShell view={view} onNavigate={(v) => go(v)} onBack={history.length ? goBack : null}>
-        {view === 'dashboard' && <Dashboard db={db} assistantOn={assistantOn} />}
-        {view === 'production' && <Production db={db} assistantOn={assistantOn} />}
-        {view === 'structure' && (
-          <Structure db={db} onOpenProfile={openProfile} onOpenEditor={openEditor} />
-        )}
-        {view === 'profiles' && (
-          <Profiles
+      <AppShell view={loc.view} onNavigate={goView} onBack={history.length ? goBack : null}>
+        {loc.view === 'dashboard' && <Dashboard db={db} assistantOn={assistantOn} />}
+        {loc.view === 'production' && <Production db={db} assistantOn={assistantOn} />}
+        {loc.view === 'structure' && (
+          <Structure
             db={db}
-            sel={profileSel}
-            onSelChange={(t) => go('profiles', t)}
-            onGoProduction={() => go('production')}
-            onEdit={(t) => openEditor({ kind: t.kind, id: t.id })}
+            sel={loc.profile}
+            onOpenProfile={openProfile}
+            onOpenEditor={openEditor}
+            onGoProduction={() => goView('production')}
             assistantOn={assistantOn}
           />
         )}
-        {view === 'data' && (
+        {loc.view === 'data' && (
           <Data
             db={db}
             onChange={updateDb}
             onReload={() => setDb(loadDb())}
             editTarget={editTarget}
             onConsumeEdit={() => setEditTarget(null)}
+            section={loc.dataSection}
+            onOpenSection={openDataSection}
           />
         )}
-        {view === 'ai' && <Placeholder label="Assistente IA" />}
-        {view === 'settings' && (
+        {loc.view === 'ai' && <Placeholder label="Assistente IA" />}
+        {loc.view === 'settings' && (
           <Settings db={db} onChange={updateDb} assistantOn={assistantOn} onAssistantChange={setAssistant} />
         )}
       </AppShell>

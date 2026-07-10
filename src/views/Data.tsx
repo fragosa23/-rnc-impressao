@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Archive as ArchiveIcon,
   Boxes,
+  ChevronRight,
   ClipboardList,
   Download,
   Factory,
@@ -69,6 +70,9 @@ export type EditTarget = {
   kind: 'machine' | 'area' | 'team' | 'worker' | 'record'
   id: string | null
 }
+
+/** Sub-secções do menu Dados (cada uma é a sua própria página). */
+export type DataSection = 'report' | 'records' | 'fichas' | 'backup' | 'history'
 
 function clone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v))
@@ -434,6 +438,8 @@ export function Data({
   onReload,
   editTarget,
   onConsumeEdit,
+  section,
+  onOpenSection,
 }: {
   db: Db
   onChange: (db: Db) => void
@@ -441,6 +447,9 @@ export function Data({
   /** Pedido de edição vindo de outro ecrã (botão "Editar" numa ficha). */
   editTarget: EditTarget | null
   onConsumeEdit: () => void
+  /** Sub-secção aberta, ou null = índice de títulos. */
+  section: DataSection | null
+  onOpenSection: (s: DataSection) => void
 }) {
   const [editingRecord, setEditingRecord] = useState<ProductionRecord | null | 'new'>(null)
   const [editingEntity, setEditingEntity] = useState<EditingEntity>(null)
@@ -513,27 +522,68 @@ export function Data({
     }
   }
 
+  const SECTIONS: { id: DataSection; icon: typeof Factory; title: string; desc: string; count?: number }[] = [
+    { id: 'report', icon: ClipboardList, title: 'Lançar relatório mensal', desc: 'O relatório do mês: OF e RNC por máquina, numa grelha.' },
+    { id: 'records', icon: Factory, title: 'Registos de não conformidade', desc: 'Ver e editar os registos de OF e RNC já no sistema.', count: db.productionRecords.length },
+    { id: 'fichas', icon: Pencil, title: 'Máquinas, equipas e trabalhadores', desc: 'Criar e editar as fichas da fábrica.' },
+    { id: 'backup', icon: ArchiveIcon, title: 'Cópia de segurança', desc: 'Exportar, importar e restaurar versões anteriores.', count: archives.length },
+    { id: 'history', icon: History, title: 'Histórico de alterações', desc: 'Tudo o que foi criado, editado ou apagado.', count: (db.changeLog ?? []).length },
+  ]
+  const current = SECTIONS.find((s) => s.id === section)
+
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold">Dados</h1>
+        <h1 className="text-2xl font-semibold">{current ? current.title : 'Dados'}</h1>
         <p className="text-sm text-muted-foreground">
-          Tudo o que entra e sai da app: o relatório mensal, os registos individuais, as cópias de
-          segurança e o histórico de quem mudou o quê.
+          {current
+            ? current.desc
+            : 'Escolhe o que queres fazer. É aqui que se lança o relatório mensal e se cria ou edita tudo.'}
         </p>
       </div>
 
-      <MonthlyReport db={db} onChange={onChange} />
+      {/* Índice: só títulos, clicáveis */}
+      {section === null && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SECTIONS.map((s) => {
+            const Icon = s.icon
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => onOpenSection(s.id)}
+                className="omp-card-hover flex items-center gap-4 rounded-xl border bg-card p-4 text-left"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted">
+                  <Icon className="size-5 text-muted-foreground" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    {s.title}
+                    {s.count !== undefined && (
+                      <span className="text-xs font-normal text-muted-foreground">({s.count})</span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{s.desc}</span>
+                </span>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {section === 'report' && <MonthlyReport db={db} onChange={onChange} />}
 
       {/* Registos individuais */}
-      <Card className="omp-card-hover">
+      {section === 'records' && (
+      <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Factory className="size-4.5 text-muted-foreground" />
-              Registos de não conformidade ({db.productionRecords.length})
-              <InfoTip text="Os registos de OF e RNC já colocados no sistema, mês a mês. Clica num registo para ver e editar (OF, RNC, causa, observações), ou cria um novo." />
-            </CardTitle>
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              {db.productionRecords.length} registos no sistema
+              <InfoTip text="Clica num registo para ver e editar (OF, RNC, causa, observações), ou cria um novo." />
+            </p>
             <Button size="sm" onClick={() => setEditingRecord('new')}>
               <Plus className="size-4" /> Novo registo
             </Button>
@@ -562,9 +612,6 @@ export function Data({
                     <span className="tabular-nums">{r.rnc} RNC</span>
                     {r.cause && <Badge variant="outline" className="font-normal">{r.cause}</Badge>}
                     <span className="ml-auto flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon-sm" aria-label="Editar registo" onClick={() => setEditingRecord(r)}>
-                        <Pencil className="size-4" />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon-sm"
@@ -595,17 +642,12 @@ export function Data({
           ))}
         </CardContent>
       </Card>
+      )}
 
       {/* Fichas: criar e editar máquinas, áreas, equipas e trabalhadores */}
-      <Card className="omp-card-hover">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Pencil className="size-4.5 text-muted-foreground" />
-            Fichas — criar e editar
-            <InfoTip text="O único sítio onde se criam e editam máquinas, áreas, equipas e trabalhadores. Os outros ecrãs (Estrutura, Fichas) são de consulta e atualizam-se automaticamente com o que fizeres aqui. Cada alteração fica no histórico." />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {section === 'fichas' && (
+      <Card>
+        <CardContent className="pt-6">
           <Tabs defaultValue="machines">
             <TabsList className="w-full">
               <TabsTrigger value="machines">
@@ -775,17 +817,12 @@ export function Data({
           </Tabs>
         </CardContent>
       </Card>
+      )}
 
       {/* Cópia de segurança */}
-      <Card className="omp-card-hover">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ArchiveIcon className="size-4.5 text-muted-foreground" />
-            Cópia de segurança
-            <InfoTip text="Exporta todos os dados num ficheiro JSON (para guardar noutro sítio ou passar para outro dispositivo) e importa um ficheiro exportado antes. Antes de qualquer importação, a versão atual fica guardada nos arquivos automáticos." />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {section === 'backup' && (
+      <Card>
+        <CardContent className="space-y-4 pt-6">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={doExport}>
               <Download className="size-4" /> Exportar dados (JSON)
@@ -843,20 +880,16 @@ export function Data({
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Histórico de alterações */}
-      <Card className="omp-card-hover">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <History className="size-4.5 text-muted-foreground" />
-            Histórico de alterações
-            <InfoTip text="Tudo o que foi criado, editado ou apagado na app, do mais recente para o mais antigo, com os campos que mudaram. Cada ficha (máquina, equipa, trabalhador) mostra também o seu próprio histórico." />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChangeLogList entries={db.changeLog ?? []} limit={30} />
+      {section === 'history' && (
+      <Card>
+        <CardContent className="pt-6">
+          <ChangeLogList entries={db.changeLog ?? []} limit={50} />
         </CardContent>
       </Card>
+      )}
 
       {/* Diálogo de ficha (máquina/área/equipa/trabalhador) */}
       <Dialog open={editingEntity !== null} onOpenChange={(o) => !o && setEditingEntity(null)}>

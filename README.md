@@ -52,15 +52,16 @@ A app foi **reconstruída de raiz** em React, mantendo o modelo de dados e os da
 - Baseado **apenas nos dados registados** (regras locais) — nunca inventa valores.
 - A cruz do balão só o recolhe; **desligar de vez faz-se em Configurações**. Em ecrãs pequenos começa recolhido para não tapar conteúdo.
 
-#### Dados (o único sítio onde se edita)
+#### Dados (índice → sub-páginas; o único sítio onde se edita)
+Um **índice de títulos** limpo — cada um abre a sua própria página (em vez de um scroll gigante):
 - **Lançar relatório mensal** — o papel que costumam fornecer, em digital: escolhe o mês, preenche OF e RNC por máquina numa grelha (pré-preenchida se o mês já tiver valores) e guarda tudo de uma vez.
 - **Registos de não conformidade** — lista por mês; clicar num registo abre-o para ver/editar (OF, RNC, causa, observações); "+ Novo registo" para criar.
-- **Fichas — criar e editar** — separadores Máquinas / Áreas / Equipas / Trabalhadores, cada um com "+ Novo", editar e apagar. O botão **"Editar"** de qualquer ficha (nas Fichas ou na Estrutura) abre aqui o formulário certo, já preenchido.
+- **Máquinas, equipas e trabalhadores** — separadores com "+ Novo", editar e apagar. O botão **"Editar"** de qualquer ficha na Estrutura abre aqui o formulário certo, já preenchido.
 - **Cópia de segurança** — exportar/importar JSON e restaurar **arquivos automáticos** (a app guarda a versão anterior antes de cada alteração ou importação).
-- **Histórico de alterações** — tudo o que foi criado, editado ou apagado, com os campos que mudaram (de → para). Cada ficha (máquina, equipa, trabalhador) mostra também o seu próprio historial.
+- **Histórico de alterações** — tudo o que foi criado, editado ou apagado, com os campos que mudaram (de → para).
 
 #### Navegação
-- **Botão Voltar** no cabeçalho: percorre o caminho todo para trás, passo a passo (ficha → lista → ecrã anterior…), por muito fundo que se tenha navegado.
+- **Botão Voltar** no cabeçalho (seta), único e universal: percorre o caminho todo para trás, passo a passo (ficha → lista → ecrã anterior; sub-página de Dados → índice), por muito fundo que se tenha navegado.
 - Navegação cruzada em toda a app: mapa → fichas, equipa ↔ trabalhador ↔ máquina, ficha → Produção, ficha → edição nos Dados.
 
 #### Configurações
@@ -81,9 +82,10 @@ A app foi **reconstruída de raiz** em React, mantendo o modelo de dados e os da
 - Gráfico de tendência mensal por máquina (OF ou RNC), com paleta de cores acessível (segura para daltonismo) e filtro por secção.
 - Um gráfico de evolução mês a mês por secção **e** por cada máquina: OF em barras, RNC em linha, variação percentual face ao mês anterior, e o total do período no canto do cartão. A máquina com melhor produção e a com pior RNC de cada secção ficam destacadas.
 
-#### Estrutura (só consulta)
-- Três separadores: **Máquinas e Áreas**, **Equipas** e **Trabalhadores** — tudo clicável, tudo leva à ficha respetiva. **Criar/editar/apagar faz-se apenas no menu Dados** (assim ninguém altera nada por engano).
+#### Estrutura (consulta + fichas)
+- O hub único da fábrica. Três separadores: **Máquinas e Áreas**, **Equipas** e **Trabalhadores** — tudo clicável abre a **ficha** respetiva dentro da própria Estrutura (as antigas "Fichas" deixaram de ser um menu à parte). **Criar/editar/apagar faz-se apenas no menu Dados** (assim ninguém altera nada por engano).
 - **Máquinas e Áreas** — um **mapa da fábrica** (estilo jogo de estratégia): cada máquina é uma unidade desenhada com o nome por cima e uma luz de estado (verde a pulsar = ativa, vermelha = descontinuada), agrupada por secção (Flexografia, Rotogravura, **Offset**) e com as **áreas de apoio** na sua zona. Clicar numa unidade faz zoom: equipas, turnos e membros dessa máquina, com **"Ficha completa"** e atalho **"Editar nos Dados"**.
+- **Fichas** (dentro da Estrutura): ficha da máquina (dados técnicos, gráfico de produção → Produção, análise ObaniA, equipas e membros), do trabalhador (idade, percurso de funções, tempo por equipa) e da equipa (máquina, regime, membros). Cada ficha tem o botão **Editar** (abre nos Dados) e o seu **histórico de alterações**. Tudo interligado e navegável.
 - **Equipas** — cada equipa associada a uma máquina, com **regime de turno** (rotativo M/T/N, rotativo M/T, ou fixo com turno + horário). A distribuição de turnos cumpridos aparecerá quando os registos de produção identificarem a equipa.
 - **Trabalhadores** — lista com total, **pesquisa por nº/nome e filtro por equipa**, função, equipa, idade calculada da data de nascimento e tempo a imprimir. Ao mudar de equipa ou função, o **histórico atualiza-se sozinho** (fecha a passagem anterior e abre a nova, com datas).
 

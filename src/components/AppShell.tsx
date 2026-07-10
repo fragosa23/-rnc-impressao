@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Factory,
   Boxes,
-  IdCard,
   Database,
   Bot,
   Menu,
@@ -23,7 +22,6 @@ export type ViewId =
   | 'dashboard'
   | 'production'
   | 'structure'
-  | 'profiles'
   | 'data'
   | 'ai'
   | 'settings'
@@ -32,7 +30,6 @@ export const VIEWS: { id: ViewId; label: string; icon: typeof LayoutDashboard }[
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'production', label: 'Produção', icon: Factory },
   { id: 'structure', label: 'Estrutura', icon: Boxes },
-  { id: 'profiles', label: 'Fichas', icon: IdCard },
   { id: 'data', label: 'Dados', icon: Database },
   { id: 'ai', label: 'Assistente IA', icon: Bot },
   { id: 'settings', label: 'Configurações', icon: Settings },
