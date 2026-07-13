@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Insight } from '@/lib/insights'
 import { toneVar } from '@/lib/severity'
@@ -33,15 +33,14 @@ export function ObaniA({
   insights: Insight[]
   enabled: boolean
 }) {
-  // Em ecrãs pequenos começa recolhido (só o pontinho avisa) — para nunca tapar o conteúdo.
-  const isWide = () => window.matchMedia('(min-width: 640px)').matches
-  const [open, setOpen] = useState(isWide)
+  // Começa sempre fechado para nunca tapar o conteúdo; o "!" animado no botão
+  // avisa que há sugestões novas por ler.
+  const [open, setOpen] = useState(false)
+  const [seenSignature, setSeenSignature] = useState('')
 
-  // Assinatura do conjunto de sugestões: quando muda (novo período), reabre o balão (em ecrã largo).
+  // Assinatura do conjunto de sugestões: quando muda (novo período), o aviso volta a aparecer.
   const signature = useMemo(() => insights.map((i) => i.id).join('|'), [insights])
-  useEffect(() => {
-    if (insights.length && isWide()) setOpen(true)
-  }, [signature, insights.length])
+  const hasUnread = !open && insights.length > 0 && signature !== seenSignature
 
   if (!enabled || insights.length === 0) return null
 
@@ -50,12 +49,27 @@ export function ObaniA({
       {/* Botão flutuante (sempre presente enquanto o assistente está ligado) */}
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label={open ? 'Esconder as sugestões do assistente' : 'Mostrar as sugestões do assistente'}
+        onClick={() =>
+          setOpen((o) => {
+            if (!o) setSeenSignature(signature)
+            return !o
+          })
+        }
+        aria-label={
+          open
+            ? 'Esconder as sugestões do assistente'
+            : hasUnread
+              ? 'Há sugestões novas do assistente — abrir'
+              : 'Mostrar as sugestões do assistente'
+        }
         className="omp-assistant-btn fixed right-4 bottom-4 z-40 flex items-center justify-center rounded-2xl shadow-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60"
       >
         <Mascot />
-        {!open && <span className="omp-assistant-dot" aria-hidden="true" />}
+        {hasUnread && (
+          <span className="omp-assistant-alert" aria-hidden="true">
+            !
+          </span>
+        )}
       </button>
 
       {/* Balão de sugestões */}

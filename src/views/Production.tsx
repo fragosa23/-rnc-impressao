@@ -1,13 +1,11 @@
-import { useState } from 'react'
-import { AlertTriangle, ThumbsDown, ThumbsUp, TrendingUp } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { AlertTriangle, ChevronDown, ThumbsDown, ThumbsUp, TrendingUp } from 'lucide-react'
 import {
   Bar,
   CartesianGrid,
   ComposedChart,
   LabelList,
-  Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip as RTooltip,
   XAxis,
@@ -26,12 +24,11 @@ import { InfoTip } from '@/components/InfoTip'
 import { ChartReview } from '@/components/ChartReview'
 import type { Db, Machine, ProductionRecord } from '@/lib/types'
 import { aggregate, fmt, MONTHS, recordsFor, sectionName } from '@/lib/db'
-import { machineColor, sectionColor } from '@/lib/colors'
+import { sectionColor } from '@/lib/colors'
 import {
   reviewMachineEvolution,
   reviewMachinesChart,
   reviewSectionEvolution,
-  reviewTrendChart,
 } from '@/lib/insights'
 import { taxaTone, toneVar, type Tone } from '@/lib/severity'
 
@@ -152,180 +149,6 @@ function MachinesChart({ db, year, assistantOn }: { db: Db; year: number; assist
             <span className="size-2.5 rounded-full" style={{ background: sectionColor('roto') }} /> Rotogravura (IR)
           </span>
         </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-interface TipItem {
-  dataKey?: string | number
-  name?: string
-  value?: number | string
-  color?: string
-  stroke?: string
-}
-/** Tooltip que mostra só a máquina do ponto sob o cursor (não a coluna toda). */
-function SinglePointTooltip({
-  active,
-  payload,
-  label,
-  hovered,
-}: {
-  active?: boolean
-  payload?: TipItem[]
-  label?: string | number
-  hovered: string | null
-}) {
-  if (!active || !payload || !payload.length) return null
-  const item = (hovered && payload.find((p) => p.dataKey === hovered)) || payload[0]
-  if (!item) return null
-  return (
-    <div
-      style={{
-        background: 'var(--popover)',
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-        color: 'var(--popover-foreground)',
-        fontSize: 12,
-        padding: '6px 10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-      }}
-    >
-      <div style={{ marginBottom: 3, color: 'var(--muted-foreground)' }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span
-          style={{ width: 10, height: 10, borderRadius: 9999, background: item.color ?? item.stroke }}
-        />
-        <b>{item.name}</b>: {item.value}
-      </div>
-    </div>
-  )
-}
-
-function TrendChart({ db, year, assistantOn }: { db: Db; year: number; assistantOn: boolean }) {
-  const [metric, setMetric] = useState<'of' | 'rnc'>('of')
-  const [sectionFilter, setSectionFilter] = useState<'all' | 'flexo' | 'roto'>('all')
-  const [hovered, setHovered] = useState<string | null>(null)
-  // Máquinas escondidas ao clicar na legenda (para isolar as linhas que interessam).
-  const [hidden, setHidden] = useState<Set<string>>(new Set())
-  const toggleLine = (name: string) =>
-    setHidden((prev) => {
-      const next = new Set(prev)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
-      return next
-    })
-  const all = recordsFor(db, { year })
-
-  const monthKeys = [...new Set(all.map((r) => r.year * 12 + r.month))].sort((a, b) => a - b)
-  const machines = db.machines.filter(
-    (m) =>
-      (sectionFilter === 'all' || m.sectionId === sectionFilter) &&
-      all.some((r) => r.machineId === m.id),
-  )
-
-  const data = monthKeys.map((k) => {
-    const y = Math.floor(k / 12)
-    const mo = ((k % 12) + 12) % 12
-    const row: Record<string, number | string> = { label: `${MONTHS[mo].slice(0, 3)} ${String(y).slice(2)}` }
-    machines.forEach((m) => {
-      const a = aggregate(all.filter((r) => r.machineId === m.id && r.year === y && r.month === mo))
-      row[m.name] = metric === 'of' ? a.of : a.rnc
-    })
-    return row
-  })
-
-  const metricBtn = (id: 'of' | 'rnc', label: string) => (
-    <Button size="sm" variant={metric === id ? 'default' : 'outline'} onClick={() => setMetric(id)}>
-      {label}
-    </Button>
-  )
-  const sectionBtn = (id: 'all' | 'flexo' | 'roto', label: string) => (
-    <Button
-      size="sm"
-      variant={sectionFilter === id ? 'default' : 'outline'}
-      onClick={() => setSectionFilter(id)}
-    >
-      {label}
-    </Button>
-  )
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-1.5 text-base">
-          Tendência ao longo dos meses
-          <InfoTip text="Evolução mês a mês de cada máquina. Passa o cursor sobre um ponto para ver o valor dessa máquina nesse mês. Clica numa máquina na legenda para a esconder/mostrar e isolar as que interessam." />
-          {assistantOn && (
-            <span className="ml-auto">
-              <ChartReview insights={reviewTrendChart(db, year)} label="Tendência ao longo dos meses" />
-            </span>
-          )}
-        </CardTitle>
-        <div className="flex flex-wrap gap-3 pt-2">
-          <div className="flex gap-1.5">
-            {metricBtn('of', 'OF / trabalhos')}
-            {metricBtn('rnc', 'RNC / defeitos')}
-          </div>
-          <div className="flex gap-1.5">
-            {sectionBtn('all', 'Todas')}
-            {sectionBtn('flexo', 'Flexografia')}
-            {sectionBtn('roto', 'Rotogravura')}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Ainda não há meses com dados.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={340}>
-            <LineChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 4 }} onMouseLeave={() => setHovered(null)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
-              <YAxis tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} allowDecimals={false} width={36} />
-              <RTooltip cursor={{ stroke: 'var(--border)' }} content={<SinglePointTooltip hovered={hovered} />} />
-              <Legend
-                wrapperStyle={{ fontSize: 12, cursor: 'pointer', userSelect: 'none' }}
-                onClick={(e) => {
-                  const name = (e as { value?: string }).value
-                  if (name) toggleLine(name)
-                }}
-                formatter={(value: string) => (
-                  <span style={{ opacity: hidden.has(value) ? 0.35 : 1 }}>{value}</span>
-                )}
-              />
-              {machines.map((m) => {
-                const color = machineColor(db, m.id)
-                return (
-                  <Line
-                    key={m.id}
-                    type="monotone"
-                    dataKey={m.name}
-                    hide={hidden.has(m.name)}
-                    stroke={color}
-                    strokeWidth={2.5}
-                    activeDot={false}
-                    connectNulls
-                    dot={(props: { cx?: number; cy?: number; index?: number }) => {
-                      const { cx, cy, index } = props
-                      if (cx == null || cy == null) return <g key={`${m.id}-${index}`} />
-                      return (
-                        <g
-                          key={`${m.id}-${index}`}
-                          className="omp-dot"
-                          onMouseEnter={() => setHovered(m.name)}
-                        >
-                          <circle className="omp-dot-core" cx={cx} cy={cy} r={4} fill={color} />
-                          <circle cx={cx} cy={cy} r={12} fill="transparent" />
-                        </g>
-                      )
-                    }}
-                  />
-                )
-              })}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
       </CardContent>
     </Card>
   )
@@ -591,6 +414,26 @@ function EvoTooltip({ active, payload }: { active?: boolean; payload?: { payload
   )
 }
 
+/** Detalhe por máquina, fechado por defeito para o ecrã não virar uma parede de gráficos. */
+function MachineDetails({ count, children }: { count: number; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="gap-1.5"
+      >
+        <ChevronDown className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        {open ? 'Esconder o detalhe por máquina' : `Ver detalhe por máquina (${count})`}
+      </Button>
+      {open && <div className="mt-3 grid gap-3 md:grid-cols-2">{children}</div>}
+    </div>
+  )
+}
+
 export function Production({ db, assistantOn }: { db: Db; assistantOn: boolean }) {
   const years = [...new Set(db.productionRecords.map((r) => r.year))].sort((a, b) => b - a)
   const [year, setYear] = useState(years[0] ?? new Date().getFullYear())
@@ -622,9 +465,11 @@ export function Production({ db, assistantOn }: { db: Db; assistantOn: boolean }
       </div>
 
       <MachinesChart db={db} year={year} assistantOn={assistantOn} />
-      <TrendChart db={db} year={year} assistantOn={assistantOn} />
 
       {db.sections.map((section) => {
+        const sectionRecords = recordsFor(db, { sectionId: section.id, year })
+        // Secções sem qualquer registo no ano não aparecem (ex.: Offset sem dados).
+        if (sectionRecords.length === 0) return null
         const machines = db.machines.filter((m) => m.sectionId === section.id)
         const stats = machines.map((m) => ({ m, a: aggregate(recordsFor(db, { machineId: m.id, year })) }))
         const withData = stats.filter((x) => x.a.of > 0 && x.m.status !== 'discontinued')
@@ -639,7 +484,7 @@ export function Production({ db, assistantOn }: { db: Db; assistantOn: boolean }
             <EvolutionCard
               title={`Evolução — ${section.name}`}
               color={sectionColor(section.id)}
-              records={recordsFor(db, { sectionId: section.id, year })}
+              records={sectionRecords}
               info={`Mês a mês, ${section.name}: barras = OF (trabalhos), linha = RNC (defeitos). Por baixo, a variação face ao mês anterior — verde é bom, vermelho é mau.`}
               height={220}
               review={
@@ -648,7 +493,7 @@ export function Production({ db, assistantOn }: { db: Db; assistantOn: boolean }
                   : undefined
               }
             />
-            <div className="grid gap-3 md:grid-cols-2">
+            <MachineDetails count={machines.length}>
               {machines.map((m) => (
                 <EvolutionCard
                   key={m.id}
@@ -666,7 +511,7 @@ export function Production({ db, assistantOn }: { db: Db; assistantOn: boolean }
                   }
                 />
               ))}
-            </div>
+            </MachineDetails>
           </div>
         )
       })}

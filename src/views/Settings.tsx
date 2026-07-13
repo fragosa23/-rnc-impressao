@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Clock, Plus, Target, Trash2 } from 'lucide-react'
+import { Clock, Plus, Sun, Target, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { InfoTip } from '@/components/InfoTip'
 import type { Db } from '@/lib/types'
 import { defaultSettings } from '@/lib/db'
+import type { ThemePref } from '@/lib/prefs'
 
 function clone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v))
@@ -30,11 +31,15 @@ export function Settings({
   onChange,
   assistantOn,
   onAssistantChange,
+  theme,
+  onThemeChange,
 }: {
   db: Db
   onChange: (db: Db) => void
   assistantOn: boolean
   onAssistantChange: (on: boolean) => void
+  theme: ThemePref
+  onThemeChange: (t: ThemePref) => void
 }) {
   const settings = db.settings ?? defaultSettings()
   const [newSchedule, setNewSchedule] = useState('')
@@ -84,6 +89,31 @@ export function Settings({
             checked={assistantOn}
             onCheckedChange={onAssistantChange}
             aria-label="Ligar ou desligar o assistente ObaniA"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Tema */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-4 px-6 py-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <Sun className="size-4.5 text-muted-foreground" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 font-semibold">
+              Modo claro
+              <InfoTip text="A app usa o modo escuro por padrão. Liga o modo claro se preferires fundo branco — melhor em ambientes com muita luz." />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {theme === 'light'
+                ? 'Ligado — fundo claro. Desliga para voltar ao modo escuro padrão.'
+                : 'Desligado — a app está no modo escuro padrão.'}
+            </p>
+          </div>
+          <Switch
+            checked={theme === 'light'}
+            onCheckedChange={(on) => onThemeChange(on ? 'light' : 'dark')}
+            aria-label="Ligar ou desligar o modo claro"
           />
         </CardContent>
       </Card>

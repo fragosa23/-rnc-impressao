@@ -52,8 +52,10 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Tema único (escuro) — só o modo escuro é suportado nesta app. */
+/* Tema escuro é o padrão (:root). A classe .light no <html> ativa o modo claro
+   (opção em Configurações). */
 :root {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -90,6 +92,46 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Modo claro — mesmos papéis de cor, valores invertidos, contraste AA. */
+.light {
+    color-scheme: light;
+    --background: oklch(0.962 0.003 264);
+    --foreground: oklch(0.17 0.01 264);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.17 0.01 264);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.17 0.01 264);
+    --primary: oklch(0.5 0.19 264);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.93 0.004 264);
+    --secondary-foreground: oklch(0.2 0.01 264);
+    --muted: oklch(0.93 0.004 264);
+    --muted-foreground: oklch(0.44 0.012 264);
+    --accent: oklch(0.93 0.004 264);
+    --accent-foreground: oklch(0.2 0.01 264);
+    --destructive: oklch(0.55 0.22 25);
+    --success: oklch(0.5 0.15 150);
+    --success-foreground: oklch(0.985 0 0);
+    --warning: oklch(0.58 0.14 75);
+    --warning-foreground: oklch(0.985 0 0);
+    --border: oklch(0 0 0 / 10%);
+    --input: oklch(0 0 0 / 14%);
+    --ring: oklch(0.55 0.05 264);
+    --chart-1: oklch(0.3 0 0);
+    --chart-2: oklch(0.5 0 0);
+    --chart-3: oklch(0.62 0 0);
+    --chart-4: oklch(0.74 0 0);
+    --chart-5: oklch(0.86 0 0);
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0.17 0.01 264);
+    --sidebar-primary: oklch(0.5 0.19 264);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.93 0.004 264);
+    --sidebar-accent-foreground: oklch(0.2 0.01 264);
+    --sidebar-border: oklch(0 0 0 / 10%);
+    --sidebar-ring: oklch(0.55 0.05 264);
 }
 
 @layer base {
@@ -303,15 +345,27 @@
 }
 .omp-led { animation: omp-led-blink 1.6s ease-in-out infinite; }
 
-/* Ponto de notificação quando o balão está fechado mas há sugestões. */
-.omp-assistant-dot {
+/* Ponto de exclamação animado: o balão está fechado mas há sugestões por ler. */
+@keyframes omp-alert-bounce {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.3); }
+  60% { transform: scale(1.15); }
+}
+.omp-assistant-alert {
   position: absolute;
-  top: -2px; right: -2px;
-  width: 12px; height: 12px;
+  top: -7px; right: -7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px; height: 21px;
   border-radius: 9999px;
   background: var(--warning);
+  color: var(--warning-foreground);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
   border: 2px solid var(--background);
-  animation: omp-pulse 1.6s ease-in-out infinite;
+  animation: omp-alert-bounce 1.2s ease-in-out infinite;
 }
 
 /* Entrada do balão. */
@@ -323,6 +377,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .omp-in, .omp-spark, .omp-bar, .omp-panel-in, .omp-eye,
-  .omp-blob-1, .omp-blob-2, .omp-assistant-dot, .omp-led { animation: none; }
+  .omp-blob-1, .omp-blob-2, .omp-assistant-alert, .omp-led { animation: none; }
   .omp-ring, .omp-card-hover, .omp-assistant-btn, .omp-unit, .omp-review-btn { transition: none; }
 }
